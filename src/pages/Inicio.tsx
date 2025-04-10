@@ -15,8 +15,8 @@ function Inicio() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-r from-green-500 to-teal-500 p-6 mt-5">
-        <div className="container mx-auto text-center text-green-950">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div className="container mx-auto text-center text-green-950 ">
           <h1 className="text-5xl font-extrabold mb-6">
             ¿Qué es la Huella de Carbono y cómo impactan los dispositivos
             electrónicos?
@@ -31,7 +31,7 @@ function Inicio() {
             huella de carbono.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12">
-            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105">
+            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105 shadow-xl shadow-green-900 mt-5">
               <FontAwesomeIcon
                 icon={faLeaf}
                 className="text-teal-500 text-5xl mb-4"
@@ -47,7 +47,7 @@ function Inicio() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105">
+            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105 shadow-xl shadow-green-900 mt-5">
               <FontAwesomeIcon
                 icon={faCalculator}
                 className="text-teal-500 text-5xl mb-4"
@@ -68,7 +68,7 @@ function Inicio() {
               </Link>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105">
+            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105 shadow-xl shadow-green-900 mt-5">
               <FontAwesomeIcon
                 icon={faMobileAlt}
                 className="text-teal-500 text-5xl mb-4"
@@ -85,7 +85,7 @@ function Inicio() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105">
+            <div className="bg-white p-8 rounded-xl shadow-xl hover:shadow-2xl transform transition duration-300 hover:scale-105 shadow-xl shadow-green-900 mt-5">
               <FontAwesomeIcon
                 icon={faPlug}
                 className="text-teal-500 text-5xl mb-4"
@@ -102,8 +102,8 @@ function Inicio() {
             </div>
           </div>
 
-          <div className="mt-12 bg-white p-6 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-100 max-w-md mx-auto">
-            <h3 className="text-3xl font-extrabold text-green-900 mb-6 text-center">
+          <div className="mt-12 bg-white p-6 rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-100 max-w-md mx-auto shadow-xl shadow-green-900 ">
+            <h3 className="text-3xl font-extrabold text-green-900 mb-9 text-center">
               ¿Cómo Puedes Reducir tu Huella de Carbono?
             </h3>
             <ul className="text-lg text-green-900 list-inside list-disc space-y-4">

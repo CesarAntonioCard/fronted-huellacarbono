@@ -1,0 +1,31 @@
+@keyframes borderAnimation {
+  0% {
+    border-color: transparent;
+    border-left-color: #22c55e;
+  }
+  25% {
+    border-left-color: #22c55e;
+    border-top-color: #22c55e;
+  }
+  50% {
+    border-left-color: #22c55e;
+    border-top-color: #22c55e;
+    border-right-color: #22c55e;
+  }
+  75% {
+    border-left-color: #22c55e;
+    border-top-color: #22c55e;
+    border-right-color: #22c55e;
+    border-bottom-color: #22c55e;
+  }
+  100% {
+    border-left-color: #22c55e;
+    border-top-color: #22c55e;
+    border-right-color: #22c55e;
+    border-bottom-color: #22c55e;
+  }
+}
+
+.animate-border {
+  animation: borderAnimation 6s ease-in-out infinite;
+}
