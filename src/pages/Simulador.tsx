@@ -13,6 +13,30 @@ const Simulador = () => {
   const [numDispositivos, setNumDispositivos] = useState(0);
   const [huellaDispositivos, setHuellaDispositivos] = useState(0);
 
+  const [espacioNube, setEspacioNube] = useState(0);
+  const [huellaNube, setHuellaNube] = useState(0);
+
+  const [numEmails, setNumEmails] = useState(0);
+  const [huellaEmails, setHuellaEmails] = useState(0);
+
+  const handleInputChangeNube = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const espacio = Number(event.target.value);
+    setEspacioNube(espacio);
+    const carbono = espacio * 0.125;
+    setHuellaNube(carbono);
+  };
+
+  const handleInputChangeEmails = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const emails = Number(event.target.value);
+    setNumEmails(emails);
+    const carbono = emails * 0.02;
+    setHuellaEmails(carbono);
+  };
+
   const handleInputChangeHojas = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -34,6 +58,8 @@ const Simulador = () => {
   const SCALING_FACTOR = 100;
   const scaledCarbonFootprint = huellaCarbono * SCALING_FACTOR;
   const scaledCarbonFootprintDispositivos = huellaDispositivos * SCALING_FACTOR;
+  const scaledCarbonFootprintNube = huellaNube * SCALING_FACTOR;
+  const scaledCarbonFootprintEmails = huellaEmails * SCALING_FACTOR;
 
   const chartSegments = [
     { name: "Verde", value: 15, color: "#4CAF50" },
@@ -45,6 +71,18 @@ const Simulador = () => {
     { name: "Bajo", value: 200, color: "#4CAF50" },
     { name: "Moderado", value: 400, color: "#FF9800" },
     { name: "Alto", value: 400, color: "#F44336" },
+  ];
+
+  const chartSegmentsNube = [
+    { name: "Bajo", value: 100, color: "#4CAF50" },
+    { name: "Moderado", value: 100, color: "#FF9800" },
+    { name: "Alto", value: 200, color: "#F44336" },
+  ];
+
+  const chartSegmentsEmails = [
+    { name: "Bajo", value: 10, color: "#4CAF50" },
+    { name: "Moderado", value: 10, color: "#FF9800" },
+    { name: "Alto", value: 20, color: "#F44336" },
   ];
 
   const cx = 150;
@@ -101,145 +139,272 @@ const Simulador = () => {
   return (
     <>
       <Navbar />
-      <div className="bg-gray-100 pt-8">
-        <div className="bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded-xl shadow-md max-w-4xl mx-auto  flex items-start p-6">
-          <div className="text-blue-500 text-2xl mr-3">
-            <FontAwesomeIcon icon={faExclamationCircle} />
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="flex flex-col items-center gap-10 p-8 w-full max-w-6xl">
+          <div className=" w-[90%] bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded-xl shadow-md max-w-4xl mx-auto flex items-start p-3">
+            <div className="text-blue-500 text-2xl mr-3">
+              <FontAwesomeIcon icon={faExclamationCircle} />
+            </div>
+            <div>
+              <p className="font-medium">
+                Estos simuladores muestran estimaciones promedio del consumo y
+                la huella de carbono.
+              </p>
+              <p className="text-sm text-blue-800">
+                Los resultados pueden variar dependiendo de múltiples factores
+                específicos del contexto real.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium">
-              Estos simuladores muestran estimaciones promedio del consumo y la
-              huella de carbono.
-            </p>
-            <p className="text-sm text-blue-800">
-              Los resultados pueden variar dependiendo de múltiples factores
-              específicos del contexto real.
-            </p>
-          </div>
-        </div>
 
-        <div className="min-h-screen flex flex-col sm:flex-row items-stretch justify-center  space-y-6 sm:space-y-0 sm:space-x-6 p-8">
-          <div className="bg-white h-full p-6 rounded-2xl shadow-xl shadow-green-900 w-full sm:w-1/2 max-w-md border-4 border-transparent bg-clip-border mt-5 mb-5 min-h-[900px]">
+          <div className="w-[90%] bg-white p-8 rounded-2xl shadow-xl border-4 border-transparent min-h-[300px] mx-auto">
             <h1 className="text-4xl font-extrabold text-center text-green-800 mb-6">
               Simulador de Huella de Carbono por Hojas de Papel
             </h1>
 
-            <div className="bg-white p-6 rounded-xl shadow-xl max-w-md mx-auto mb-8">
-              <h3 className="text-2xl font-semibold text-green-900 mb-4">
-                Introduce el número de hojas:
-              </h3>
-              <input
-                type="number"
-                value={numHojas}
-                onChange={handleInputChangeHojas}
-                className="p-3 w-full border border-gray-300 rounded-lg"
-                min="0"
-                placeholder="Ejemplo: 5 hojas"
-              />
-            </div>
-
-            <div className="bg-white p-6 rounded-xl shadow-xl max-w-md mx-auto mb-8">
-              <h3 className="text-2xl font-semibold text-green-900 mb-4">
-                Resultado de la Huella de Carbono:
-              </h3>
-              <p className="text-lg text-green-800">
-                La huella de carbono de {numHojas} hojas de papel es:{" "}
-                <span className="font-bold text-green-700">
-                  {huellaCarbono.toFixed(2)} kg de CO2
-                </span>
-                {""}.
-              </p>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart width={400} height={200}>
-                  <Pie
-                    dataKey="value"
-                    startAngle={180}
-                    endAngle={0}
-                    data={chartSegments}
-                    cx={cx}
-                    cy={cy}
-                    innerRadius={iR}
-                    outerRadius={oR}
-                    stroke="none"
-                  >
-                    {chartSegments.map((entry) => (
-                      <Cell key={`cell-${entry.name}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-
-                  {needle(
-                    scaledCarbonFootprint,
-                    chartSegments,
-                    cx,
-                    cy,
-                    iR,
-                    oR,
-                    "#d0d000"
-                  )}
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="w-full lg:w-1/2">
+                <h3 className="text-2xl font-semibold text-green-900 mb-4">
+                  Introduce el número de hojas:
+                </h3>
+                <input
+                  type="number"
+                  value={numHojas}
+                  onChange={handleInputChangeHojas}
+                  className="p-3 w-full border border-gray-300 rounded-lg"
+                  min="0"
+                  placeholder="Ejemplo: 5 hojas"
+                />
+                <p className="mt-6 text-lg text-green-800">
+                  La huella de carbono de {numHojas} hojas de papel es:{" "}
+                  <span className="font-bold text-green-700">
+                    {huellaCarbono.toFixed(2)} kg de CO2
+                  </span>
+                  {""}.
+                </p>
+              </div>
+              <div className="w-full lg:w-1/2">
+                <ResponsiveContainer
+                  width={400}
+                  height={200}
+                  className="ml-[-50px] lg:ml-0"
+                >
+                  <PieChart width={400} height={200}>
+                    <Pie
+                      dataKey="value"
+                      startAngle={180}
+                      endAngle={0}
+                      data={chartSegments}
+                      cx={cx}
+                      cy={cy}
+                      innerRadius={iR}
+                      outerRadius={oR}
+                      stroke="none"
+                    >
+                      {chartSegments.map((entry) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    {needle(
+                      scaledCarbonFootprint,
+                      chartSegments,
+                      cx,
+                      cy,
+                      iR,
+                      oR,
+                      "#d0d000"
+                    )}
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white h-full p-6 rounded-2xl shadow-xl shadow-green-900 w-full sm:w-1/2 max-w-md border-4 border-transparent bg-clip-border mt-5 mb-5 ">
+          <div className="w-[90%] bg-white p-8 rounded-2xl shadow-xl border-4 border-transparent min-h-[300px] mx-auto">
             <h1 className="text-4xl font-extrabold text-center text-green-800 mb-6">
               Simulador de Huella de Carbono por Dispositivos Electrónicos
             </h1>
 
-            <div className="bg-white p-6 rounded-xl shadow-xl max-w-md mx-auto mb-8">
-              <h3 className="text-2xl font-semibold text-green-900 mb-4">
-                ¿Cuántos dispositivos electrónicos tienes en tu hogar?
-              </h3>
-              <input
-                type="number"
-                value={numDispositivos}
-                onChange={handleInputChangeDispositivos}
-                className="p-3 w-full border border-gray-300 rounded-lg"
-                min="0"
-                placeholder="Ejemplo: 5 dispositivos"
-              />
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="w-full lg:w-1/2">
+                <h3 className="text-2xl font-semibold text-green-900 mb-4">
+                  ¿Cuántos dispositivos electrónicos tienes en tu hogar?
+                </h3>
+                <input
+                  type="number"
+                  value={numDispositivos}
+                  onChange={handleInputChangeDispositivos}
+                  className="p-3 w-full border border-gray-300 rounded-lg"
+                  min="0"
+                  placeholder="Ejemplo: 5 dispositivos"
+                />
+                <p className="mt-6 text-lg text-green-800">
+                  La huella de carbono de {numDispositivos} dispositivos es:{" "}
+                  <span className="font-bold text-green-700">
+                    {huellaDispositivos.toFixed(2)} kg de CO2 al mes
+                  </span>
+                  {""}.
+                </p>
+              </div>
+              <div className="w-full lg:w-1/2">
+                <ResponsiveContainer
+                  width={400}
+                  height={200}
+                  className="ml-[-50px] lg:ml-0"
+                >
+                  <PieChart width={400} height={200}>
+                    <Pie
+                      dataKey="value"
+                      startAngle={180}
+                      endAngle={0}
+                      data={chartSegmentsDispositivos}
+                      cx={cx}
+                      cy={cy}
+                      innerRadius={iR}
+                      outerRadius={oR}
+                      stroke="none"
+                    >
+                      {chartSegments.map((entry) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    {needle(
+                      scaledCarbonFootprintDispositivos,
+                      chartSegmentsDispositivos,
+                      cx,
+                      cy,
+                      iR,
+                      oR,
+                      "#d0d000"
+                    )}
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
+          </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-xl max-w-md mx-auto mb-8">
-              <h3 className="text-2xl font-semibold text-green-900 mb-4">
-                Resultado de la Huella de Carbono:
-              </h3>
-              <p className="text-lg text-green-800">
-                La huella de carbono de {numDispositivos} dispositivos es:{" "}
-                <span className="font-bold text-green-700">
-                  {huellaDispositivos.toFixed(2)} kg de CO2 al mes
-                </span>
-                {""}.
-              </p>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart width={400} height={200}>
-                  <Pie
-                    dataKey="value"
-                    startAngle={180}
-                    endAngle={0}
-                    data={chartSegmentsDispositivos}
-                    cx={cx}
-                    cy={cy}
-                    innerRadius={iR}
-                    outerRadius={oR}
-                    stroke="none"
-                  >
-                    {chartSegments.map((entry) => (
-                      <Cell key={`cell-${entry.name}`} fill={entry.color} />
-                    ))}
-                  </Pie>
+          <div className="w-[90%] bg-white p-8 rounded-2xl shadow-xl border-4 border-transparent min-h-[300px] mx-auto">
+            <h1 className="text-4xl font-extrabold text-center text-green-800 mb-6">
+              Simulador de Huella de Carbono por Uso de espacio en la Nube
+            </h1>
 
-                  {needle(
-                    scaledCarbonFootprintDispositivos,
-                    chartSegmentsDispositivos,
-                    cx,
-                    cy,
-                    iR,
-                    oR,
-                    "#d0d000"
-                  )}
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="w-full lg:w-1/2">
+                <h3 className="text-2xl font-semibold text-green-900 mb-4">
+                  Introduce el espacio usado en la nube:
+                </h3>
+                <input
+                  type="number"
+                  value={espacioNube}
+                  onChange={handleInputChangeNube}
+                  className="p-3 w-full border border-gray-300 rounded-lg"
+                  min="0"
+                  placeholder="Ejemplo: 5 hojas"
+                />
+                <p className="mt-6 text-lg text-green-800">
+                  La huella de carbono de {espacioNube} GB en la nube es:{" "}
+                  <span className="font-bold text-green-700">
+                    {huellaNube.toFixed(2)} kg de CO2
+                  </span>
+                  {""}.
+                </p>
+              </div>
+              <div className="w-full lg:w-1/2">
+                <ResponsiveContainer
+                  width={400}
+                  height={200}
+                  className="ml-[-50px] lg:ml-0"
+                >
+                  <PieChart width={400} height={200}>
+                    <Pie
+                      dataKey="value"
+                      startAngle={180}
+                      endAngle={0}
+                      data={chartSegmentsNube}
+                      cx={cx}
+                      cy={cy}
+                      innerRadius={iR}
+                      outerRadius={oR}
+                      stroke="none"
+                    >
+                      {chartSegmentsNube.map((entry) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    {needle(
+                      scaledCarbonFootprintNube,
+                      chartSegmentsNube,
+                      cx,
+                      cy,
+                      iR,
+                      oR,
+                      "#d0d000"
+                    )}
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-[90%] bg-white p-8 rounded-2xl shadow-xl border-4 border-transparent min-h-[300px] mx-auto">
+            <h1 className="text-4xl font-extrabold text-center text-green-800 mb-6">
+              Simulador de Huella de Carbono por Correo electronicos
+            </h1>
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="w-full lg:w-1/2">
+                <h3 className="text-2xl font-semibold text-green-900 mb-4">
+                  Introduce el numero de correos electronicos enviados:
+                </h3>
+                <input
+                  type="number"
+                  value={numEmails}
+                  onChange={handleInputChangeEmails}
+                  className="p-3 w-full border border-gray-300 rounded-lg"
+                  min="0"
+                  placeholder="Ejemplo: 5 hojas"
+                />
+                <p className="mt-6 text-lg text-green-800">
+                  La huella de carbono de {numEmails} correos enviados es:{" "}
+                  <span className="font-bold text-green-700">
+                    {huellaEmails.toFixed(2)} kg de CO2
+                  </span>
+                  {""}.
+                </p>
+              </div>
+              <div className="w-full lg:w-1/2">
+                <ResponsiveContainer
+                  width={400}
+                  height={200}
+                  className="ml-[-50px] lg:ml-0"
+                >
+                  <PieChart width={400} height={200}>
+                    <Pie
+                      dataKey="value"
+                      startAngle={180}
+                      endAngle={0}
+                      data={chartSegmentsEmails}
+                      cx={cx}
+                      cy={cy}
+                      innerRadius={iR}
+                      outerRadius={oR}
+                      stroke="none"
+                    >
+                      {chartSegmentsEmails.map((entry) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    {needle(
+                      scaledCarbonFootprintEmails,
+                      chartSegmentsEmails,
+                      cx,
+                      cy,
+                      iR,
+                      oR,
+                      "#d0d000"
+                    )}
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>

@@ -9,11 +9,18 @@ import {
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
+import { useAuth } from "../../hooks/useAuth";
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -53,13 +60,33 @@ const Navbar = () => {
             <FontAwesomeIcon icon={faCalendarAlt} className="h-6 w-6" />
             <span>Próximos Eventos</span>
           </Link>
-          <Link
-            to="/login"
-            className="text-white hover:text-teal-300 font-semibold flex items-center space-x-1"
-          >
-            <FontAwesomeIcon icon={faSignInAlt} className="h-6 w-6" />
-            <span>Acceder</span>
-          </Link>
+
+          {!isAuthenticated ? (
+            <Link
+              to="/login"
+              className="text-white hover:text-teal-300 font-semibold flex items-center space-x-1"
+            >
+              <FontAwesomeIcon icon={faSignInAlt} className="h-6 w-6" />
+              <span>Acceder</span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/dashboard"
+                className="text-white hover:text-teal-300 font-semibold flex items-center space-x-1"
+              >
+                <FontAwesomeIcon icon={faCalculator} className="h-6 w-6" />
+                <span>Dashboard</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-white hover:text-red-300 font-semibold flex items-center space-x-1"
+              >
+                <FontAwesomeIcon icon={faSignInAlt} className="h-6 w-6" />
+                <span>Cerrar sesión</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -90,13 +117,36 @@ const Navbar = () => {
             <FontAwesomeIcon icon={faCalendarAlt} className="h-6 w-6" />
             <span>Próximos Eventos</span>
           </Link>
-          <Link
-            to="/login"
-            className="text-white hover:text-teal-300 font-semibold flex items-center space-x-1"
-          >
-            <FontAwesomeIcon icon={faSignInAlt} className="h-6 w-6" />
-            <span>Acceder</span>
-          </Link>
+          {!isAuthenticated ? (
+            <Link
+              to="/login"
+              className="text-white hover:text-teal-300 font-semibold flex items-center space-x-1"
+            >
+              <FontAwesomeIcon icon={faSignInAlt} className="h-6 w-6" />
+              <span>Acceder</span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/dashboard"
+                className="text-white hover:text-teal-300 font-semibold flex items-center space-x-1"
+                onClick={toggleMenu}
+              >
+                <FontAwesomeIcon icon={faCalculator} className="h-6 w-6" />
+                <span>Dashboard</span>
+              </Link>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  toggleMenu();
+                }}
+                className="text-white hover:text-red-300 font-semibold flex items-center space-x-1"
+              >
+                <FontAwesomeIcon icon={faSignInAlt} className="h-6 w-6" />
+                <span>Cerrar sesión</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </nav>

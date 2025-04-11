@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-import { login } from "../../api/authApi";
+import { login as loginApi } from "../../api/authApi";
+import { useAuth } from "../../hooks/useAuth";
 
 import "./Border.css";
 
@@ -11,7 +12,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const togglePassword = () => setShowPassword(!showPassword);
@@ -19,7 +20,8 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      await loginApi(email, password);
+      login(email);
       navigate("/");
     } catch (error) {
       console.error("Error en login:", error);

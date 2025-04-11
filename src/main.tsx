@@ -1,6 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router } from "react-router-dom";
-import App from "./App";
+import App from "./app";
+import { AuthProvider } from "./context/AuthProvider";
 import "./index.css";
 
 const root = ReactDOM.createRoot(
@@ -9,7 +10,8 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <Router>
-    {" "}
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </Router>
 );
