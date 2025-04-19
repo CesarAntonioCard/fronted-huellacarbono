@@ -20,8 +20,8 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await loginApi(email, password);
-      login(email);
+      const response = await loginApi(email, password);
+      login(response.user);
       navigate("/");
     } catch (error) {
       console.error("Error en login:", error);

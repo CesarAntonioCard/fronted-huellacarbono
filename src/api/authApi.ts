@@ -22,7 +22,13 @@ export const login = async (email: string, password: string) => {
     localStorage.setItem("authToken", token);
     localStorage.setItem("user", JSON.stringify(user));
 
-    return response.data;
+    return {
+      token,
+      user: {
+        ...user,
+        rol: user.rol.toUpperCase() as "ADMIN" | "USER",
+      },
+    };
   } catch (error) {
     console.error("Error en login:", error);
     throw error;

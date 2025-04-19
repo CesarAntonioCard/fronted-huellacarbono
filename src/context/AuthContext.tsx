@@ -1,9 +1,16 @@
 import { createContext, useContext } from "react";
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  nombreCompleto: string;
+  rol: "ADMIN" | "USER";
+}
+
 export interface AuthContextType {
   isAuthenticated: boolean;
-  user: string | null;
-  login: (username: string) => void;
+  user: AuthUser | null;
+  login: (userData: AuthUser) => void;
   logout: () => void;
 }
 

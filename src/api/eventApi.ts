@@ -39,7 +39,7 @@ export const createEvent = async (
   formData.append("fechaevento", fechaevento.toISOString());
 
   if (file) {
-    formData.append("url_image", file);
+    formData.append("image", file);
   }
 
   const response = await axiosConfig.post<Event>("/eventos", formData, {
@@ -66,7 +66,7 @@ export const updateEvent = async (
   formData.append("fechaevento", fechaevento.toISOString());
 
   if (file) {
-    formData.append("url_image", file);
+    formData.append("image", file);
   }
 
   const response = await axiosConfig.put<Event>(`/eventos/${id}`, formData, {
