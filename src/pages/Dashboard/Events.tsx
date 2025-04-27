@@ -13,86 +13,112 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogFooter,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  getEvents,
+  Event,
+  getEventsAdmin,
   deleteEvent,
   updateEvent,
   createEvent,
+  restoreEvent,
 } from "../../api/eventApi";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit, faTrash, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faEdit, faTrash, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { Input } from "@/components/ui/input";
 
-const defaultImage = "/uploads/default-image.webp";
-// 💡 Tipo de evento
-interface Event {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  link: string;
-  estado: string;
-  fechaevento: Date;
-  url_image?: string;
-}
+const defaultImage = "http://localhost:8000/uploads/default-image.webp";
 
 export const Events = () => {
   const BACKEND_URL = "http://localhost:8000";
 
   const [events, setEvents] = useState<Event[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalEventos, setTotalEventos] = useState(0);
+  const [limit] = useState(5);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteEventId, setDeleteEventId] = useState<number | null>(null);
+  const [restoreEventId, setRestoreEventId] = useState<number | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    nombre: string;
+    descripcion: string;
+    link: string;
+    fechaevento: Date;
+    url_image: File | string | undefined;
+  }>({
     nombre: "",
     descripcion: "",
     link: "",
-    estado: "",
     fechaevento: new Date(),
-    url_image: undefined as File | undefined,
+    url_image: undefined,
   });
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const data = await getEvents();
-        setEvents(data);
+        const data = await getEventsAdmin(currentPage, limit);
+        setEvents(data.events);
+        setTotalPages(data.totalPages);
+        setTotalEventos(data.totalEventos);
       } catch (error) {
         console.error("Error al obtener eventos:", error);
       }
     };
 
     fetchEvents();
-  }, []);
+  }, [currentPage, limit]);
 
-  const handleDelete = async () => {
-    if (selectedEvent) {
+  const handleConfirmDelete = async () => {
+    if (deleteEventId !== null) {
       try {
-        await deleteEvent(selectedEvent.id);
+        const updated = await deleteEvent(deleteEventId);
         setEvents((prev) =>
-          prev.filter((event) => event.id !== selectedEvent.id)
+          prev.map((r) => (r.id === updated.id ? updated : r))
         );
-        setIsDeleteModalOpen(false);
+        setDeleteEventId(null);
       } catch (error) {
-        console.error("Error al eliminar evento:", error);
+        console.error("Error al eliminar el eventos:", error);
+      }
+    }
+  };
+
+  const handleConfirmRestore = async () => {
+    if (restoreEventId !== null) {
+      try {
+        const restored = await restoreEvent(restoreEventId);
+        setEvents((prev) =>
+          prev.map((r) => (r.id === restored.id ? restored : r))
+        );
+        setRestoreEventId(null);
+      } catch (error) {
+        console.error("Error restaurando el evento:", error);
       }
     }
   };
 
   const handleCreateEvent = async () => {
     try {
+      const imageFile =
+        formData.url_image instanceof File ? formData.url_image : undefined;
+
       const newEvent = await createEvent(
         formData.nombre,
         formData.descripcion,
         formData.link,
-        formData.estado,
         formData.fechaevento,
-        formData.url_image
+        imageFile
       );
       setEvents((prevEvents) => [...prevEvents, newEvent]);
+      setTotalEventos((prev) => prev + 1);
+      setTotalPages(Math.ceil((totalEventos + 1) / limit));
+
       setIsOpen(false);
     } catch (error) {
       console.error("Error al crear evento:", error);
@@ -102,14 +128,16 @@ export const Events = () => {
   const handleUpdateEvent = async () => {
     if (selectedEvent) {
       try {
+        const imageFile =
+          formData.url_image instanceof File ? formData.url_image : undefined;
+
         const updatedEvent = await updateEvent(
           selectedEvent.id,
           formData.nombre,
           formData.descripcion,
           formData.link,
-          formData.estado,
           formData.fechaevento,
-          formData.url_image
+          imageFile
         );
         setEvents((prevEvents) =>
           prevEvents.map((event) =>
@@ -125,7 +153,22 @@ export const Events = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "fechaevento") {
+      const [year, month, day] = value.split("-").map(Number);
+
+      const localDate = new Date(year, month - 1, day);
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: localDate,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,18 +185,16 @@ export const Events = () => {
           <Button
             className="mb-4"
             onClick={() => {
-              // Reset state for creating a new event
-              setIsEditMode(false); // Ensure it's set to "Crear Evento"
+              setIsEditMode(false);
               setFormData({
                 nombre: "",
                 descripcion: "",
                 link: "",
-                estado: "",
                 fechaevento: new Date(),
                 url_image: undefined,
               });
-              setSelectedEvent(null); // Ensure no selected event
-              setIsOpen(true); // Open the modal
+              setSelectedEvent(null);
+              setIsOpen(true);
             }}
           >
             Crear Evento
@@ -164,58 +205,49 @@ export const Events = () => {
             <DialogTitle>
               {isEditMode ? "Editar Evento" : "Crear Evento"}
             </DialogTitle>
+            <DialogDescription>
+              {isEditMode
+                ? "Modifica los campos para actualizar el evento."
+                : "Completa los campos para crear un nuevo evento."}
+            </DialogDescription>
           </DialogHeader>
           <div className="mb-4">
-            <input
+            <Input
               type="text"
               name="nombre"
               value={formData.nombre}
               onChange={handleInputChange}
               placeholder="Nombre del Evento"
-              className="input"
             />
           </div>
           <div className="mb-4">
-            <input
+            <Input
               type="text"
               name="descripcion"
               value={formData.descripcion}
               onChange={handleInputChange}
               placeholder="Descripción del Evento"
-              className="input"
             />
           </div>
           <div className="mb-4">
-            <input
+            <Input
               type="text"
               name="link"
               value={formData.link}
               onChange={handleInputChange}
               placeholder="Link del Evento"
-              className="input"
             />
           </div>
           <div className="mb-4">
-            <input
-              type="text"
-              name="estado"
-              value={formData.estado}
-              onChange={handleInputChange}
-              placeholder="Estado del Evento"
-              className="input"
-            />
-          </div>
-          <div className="mb-4">
-            <input
+            <Input
               type="date"
               name="fechaevento"
               value={formData.fechaevento.toISOString().split("T")[0]}
               onChange={handleInputChange}
-              className="input"
             />
           </div>
           <div className="mb-4">
-            <input
+            <Input
               type="file"
               name="url_image"
               onChange={handleFileChange}
@@ -235,20 +267,45 @@ export const Events = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+      <Dialog
+        open={!!deleteEventId}
+        onOpenChange={() => setDeleteEventId(null)}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Estás seguro de eliminar este evento?</DialogTitle>
+            <DialogTitle>¿Eliminar evento?</DialogTitle>
+            <DialogDescription>
+              Esta acción cambiará el estado del evento a NO VISIBLE.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Eliminar
+            </Button>
+            <Button variant="outline" onClick={() => setDeleteEventId(null)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Eliminar
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!restoreEventId}
+        onOpenChange={() => setRestoreEventId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Restaurar evento?</DialogTitle>
+            <DialogDescription>
+              Esta acción cambiará el estado del evento a VISIBLE.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={handleConfirmRestore}>
+              Restaurar
+            </Button>
+            <Button variant="outline" onClick={() => setRestoreEventId(null)}>
+              Cancelar
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -270,7 +327,17 @@ export const Events = () => {
             <TableRow key={event.id}>
               <TableCell>{event.nombre}</TableCell>
               <TableCell>{event.descripcion}</TableCell>
-              <TableCell>{event.estado}</TableCell>
+              <TableCell>
+                <span
+                  className={`font-bold ${
+                    event.estado === "VISIBLE"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {event.estado}
+                </span>
+              </TableCell>
               <TableCell>
                 {new Date(event.fechaevento).toLocaleDateString()}
               </TableCell>
@@ -297,9 +364,8 @@ export const Events = () => {
                       nombre: event.nombre,
                       descripcion: event.descripcion,
                       link: event.link,
-                      estado: event.estado,
                       fechaevento: new Date(event.fechaevento),
-                      url_image: undefined,
+                      url_image: event.url_image ?? undefined,
                     });
                     setSelectedEvent(event);
                     setIsOpen(true);
@@ -307,24 +373,63 @@ export const Events = () => {
                 >
                   <FontAwesomeIcon icon={faEdit} />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => {
-                    setSelectedEvent(event);
-                    setIsDeleteModalOpen(true);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </Button>
-                <Button size="sm" variant="secondary">
-                  <FontAwesomeIcon icon={faEye} />
-                </Button>
+                {event.estado === "VISIBLE" ? (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setDeleteEventId(event.id);
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => {
+                      setRestoreEventId(event.id);
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faCheck} />
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      <div className="flex justify-between items-center mt-4 space-x-4">
+        <Button
+          variant="outline"
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-6 py-2 rounded-md font-medium text-sm"
+        >
+          Anterior
+        </Button>
+
+        <span className="font-medium text-lg text-gray-700">
+          Página {currentPage} de {totalPages}
+        </span>
+
+        <Button
+          variant="outline"
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="px-6 py-2 rounded-md font-medium text-sm"
+        >
+          Siguiente
+        </Button>
+      </div>
+      <div className="border-t border-gray-300 my-4"></div>
+      <div className="mt-4 text-lg font-semibold text-gray-800 flex justify-center items-center">
+        <span>Total de eventos: </span>
+        <span className="text-xl text-blue-600 ml-2">{totalEventos}</span>
+      </div>
     </div>
   );
 };
