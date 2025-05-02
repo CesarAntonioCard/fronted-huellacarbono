@@ -38,10 +38,34 @@ export const getEventById = async (id: number): Promise<Event> => {
 // Eventos admin
 export const getEventsAdmin = async (
   page: number = 1,
-  limit: number = 5
+  limit: number = 5,
+  nameFilter: string = "",
+  estadoFilter: string = "",
+  descripcionFilter: string = "",
+  fechaeventoFilter?: Date
 ): Promise<PaginatedEventsResponse> => {
+  let query = `?page=${page}&limit=${limit}`;
+
+  if (nameFilter) {
+    query += `&nombre=${nameFilter}`;
+  }
+
+  if (estadoFilter) {
+    query += `&estado=${estadoFilter}`;
+  }
+
+  if (descripcionFilter) {
+    query += `&descripcion=${descripcionFilter}`;
+  }
+
+  if (fechaeventoFilter) {
+    query += `&fechaevento=${encodeURIComponent(
+      fechaeventoFilter.toISOString()
+    )}`;
+  }
+
   const response = await axiosConfig.get<PaginatedEventsResponse>(
-    `${BASE_URL}/admin/all?page=${page}&limit=${limit}`
+    `${BASE_URL}/admin/all${query}`
   );
   return response.data;
 };
@@ -53,21 +77,42 @@ export const createEvent = async (
   fechaevento: Date,
   file?: File
 ): Promise<Event> => {
-  const formData = new FormData();
-  formData.append("nombre", nombre);
-  formData.append("descripcion", descripcion);
-  formData.append("link", link);
-  formData.append("fechaevento", fechaevento.toISOString());
+  try {
+    const formData = new FormData();
+    formData.append("nombre", nombre);
+    formData.append("descripcion", descripcion);
+    formData.append("link", link);
+    formData.append("fechaevento", fechaevento.toISOString());
 
-  if (file) {
-    formData.append("image", file);
+    if (file) {
+      formData.append("image", file);
+    }
+
+    const response = await axiosConfig.post<Event>(BASE_URL, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return response.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error("Error al crear:", error);
+
+    if (error?.response?.data) {
+      const { error: errorCode, message } = error.response.data;
+
+      if (errorCode === "INVALID_DESCRIPTION") {
+        throw new Error("La descripción debe tener al menos 3 caracteres ❌");
+      } else if (errorCode === "INVALID_DATE") {
+        throw new Error("La fecha del evento no puede ser pasada ❌");
+      } else if (errorCode === "EVENT_EXISTS") {
+        throw new Error("El evento ya existe ❌");
+      } else {
+        throw new Error(message ?? "Error desconocido ❌");
+      }
+    }
+
+    throw new Error("Error al registrar el evento. Intenta nuevamente ❌");
   }
-
-  const response = await axiosConfig.post<Event>(BASE_URL, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
-  return response.data;
 };
 
 export const updateEvent = async (
@@ -78,21 +123,44 @@ export const updateEvent = async (
   fechaevento: Date,
   file?: File
 ): Promise<Event> => {
-  const formData = new FormData();
-  formData.append("nombre", nombre);
-  formData.append("descripcion", descripcion);
-  formData.append("link", link);
-  formData.append("fechaevento", fechaevento.toISOString());
+  try {
+    const formData = new FormData();
+    formData.append("nombre", nombre);
+    formData.append("descripcion", descripcion);
+    formData.append("link", link);
+    formData.append("fechaevento", fechaevento.toISOString());
 
-  if (file) {
-    formData.append("image", file);
+    if (file) {
+      formData.append("image", file);
+    }
+
+    const response = await axiosConfig.put<Event>(
+      `${BASE_URL}/${id}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return response.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error("Error al crear:", error);
+
+    if (error?.response?.data) {
+      const { error: errorCode, message } = error.response.data;
+
+      if (errorCode === "INVALID_DESCRIPTION") {
+        throw new Error("La descripción debe tener al menos 3 caracteres ❌");
+      } else if (errorCode === "EVENT_EXISTS") {
+        throw new Error("El evento ya existe ❌");
+      } else {
+        throw new Error(message ?? "Error desconocido ❌");
+      }
+    }
+
+    throw new Error("Error al registrar el evento. Intenta nuevamente ❌");
   }
-
-  const response = await axiosConfig.put<Event>(`${BASE_URL}/${id}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
-  return response.data;
 };
 
 export const deleteEvent = async (id: number): Promise<Event> => {

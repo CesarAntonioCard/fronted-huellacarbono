@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -29,6 +29,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faTrash, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { Input } from "@/components/ui/input";
+import { PaginationBar } from "@/components/PaginationBar";
 
 const defaultImage = "http://localhost:8000/uploads/default-image.webp";
 
@@ -40,6 +41,14 @@ export const Events = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalEventos, setTotalEventos] = useState(0);
   const [limit] = useState(5);
+  const [nameFilter, setNameFilter] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("");
+  const [descripcionFilter, setDescripcionFilter] = useState("");
+  const [fechaeventoFilter, setFechaeventoFilter] = useState<
+    Date | undefined
+  >();
+
+  const [formError, setFormError] = useState("");
 
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -60,20 +69,37 @@ export const Events = () => {
     url_image: undefined,
   });
 
-  useEffect(() => {
-    const fetchEvents = async () => {
+  const fetchEvents = useCallback(
+    async (page: number = currentPage) => {
       try {
-        const data = await getEventsAdmin(currentPage, limit);
+        const data = await getEventsAdmin(
+          page,
+          limit,
+          nameFilter,
+          estadoFilter,
+          descripcionFilter,
+          fechaeventoFilter
+        );
         setEvents(data.events);
         setTotalPages(data.totalPages);
         setTotalEventos(data.totalEventos);
       } catch (error) {
-        console.error("Error al obtener eventos:", error);
+        console.error("Error al obtener roles:", error);
       }
-    };
+    },
+    [
+      currentPage,
+      limit,
+      nameFilter,
+      estadoFilter,
+      descripcionFilter,
+      fechaeventoFilter,
+    ]
+  );
 
+  useEffect(() => {
     fetchEvents();
-  }, [currentPage, limit]);
+  }, [fetchEvents]);
 
   const handleConfirmDelete = async () => {
     if (deleteEventId !== null) {
@@ -104,24 +130,30 @@ export const Events = () => {
   };
 
   const handleCreateEvent = async () => {
+    setFormError("");
     try {
       const imageFile =
         formData.url_image instanceof File ? formData.url_image : undefined;
 
-      const newEvent = await createEvent(
+      await createEvent(
         formData.nombre,
         formData.descripcion,
         formData.link,
         formData.fechaevento,
         imageFile
       );
-      setEvents((prevEvents) => [...prevEvents, newEvent]);
-      setTotalEventos((prev) => prev + 1);
-      setTotalPages(Math.ceil((totalEventos + 1) / limit));
+
+      setCurrentPage(1);
+      fetchEvents(1);
 
       setIsOpen(false);
-    } catch (error) {
-      console.error("Error al crear evento:", error);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error("Error en rol:", error);
+      setFormError(error.message ?? "Error desconocido");
+      setTimeout(() => {
+        setFormError("");
+      }, 2000);
     }
   };
 
@@ -145,8 +177,13 @@ export const Events = () => {
           )
         );
         setIsOpen(false);
-      } catch (error) {
-        console.error("Error al actualizar evento:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.error("Error en rol:", error);
+        setFormError(error.message ?? "Error desconocido");
+        setTimeout(() => {
+          setFormError("");
+        }, 2000);
       }
     }
   };
@@ -211,6 +248,11 @@ export const Events = () => {
                 : "Completa los campos para crear un nuevo evento."}
             </DialogDescription>
           </DialogHeader>
+          {formError && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center">
+              {formError}
+            </div>
+          )}
           <div className="mb-4">
             <Input
               type="text"
@@ -311,6 +353,56 @@ export const Events = () => {
         </DialogContent>
       </Dialog>
 
+      <div className="mb-4 flex flex-col md:flex-row flex-wrap gap-4">
+        <div className="w-full md:w-auto">
+          <input
+            type="text"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            placeholder="Filtrar por nombre"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+        <div className="w-full md:w-auto">
+          <input
+            type="text"
+            value={descripcionFilter}
+            onChange={(e) => setDescripcionFilter(e.target.value)}
+            placeholder="Filtrar por descripción"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+        <div className="w-full md:w-auto">
+          <input
+            type="date"
+            value={
+              fechaeventoFilter
+                ? fechaeventoFilter.toISOString().split("T")[0]
+                : ""
+            }
+            onChange={(e) => {
+              const selectedDate = e.target.value
+                ? new Date(e.target.value)
+                : undefined;
+              setFechaeventoFilter(selectedDate);
+            }}
+            placeholder="Filtrar por fecha"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+        <div className="w-full md:w-auto">
+          <select
+            value={estadoFilter}
+            onChange={(e) => setEstadoFilter(e.target.value)}
+            className="w-full border p-2 rounded"
+          >
+            <option value="">Filtrar por estado</option>
+            <option value="VISIBLE">VISIBLE</option>
+            <option value="NO VISIBLE">NO VISIBLE</option>
+          </select>
+        </div>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -325,8 +417,13 @@ export const Events = () => {
         <TableBody>
           {events.map((event) => (
             <TableRow key={event.id}>
-              <TableCell>{event.nombre}</TableCell>
-              <TableCell>{event.descripcion}</TableCell>
+              <TableCell className="max-w-[100px] truncate overflow-hidden whitespace-nowrap">
+                {event.nombre}
+              </TableCell>
+              <TableCell className="max-w-[100px] truncate overflow-hidden whitespace-nowrap">
+                {event.descripcion}
+              </TableCell>
+
               <TableCell>
                 <span
                   className={`font-bold ${
@@ -400,36 +497,13 @@ export const Events = () => {
         </TableBody>
       </Table>
 
-      <div className="flex justify-between items-center mt-4 space-x-4">
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-6 py-2 rounded-md font-medium text-sm"
-        >
-          Anterior
-        </Button>
-
-        <span className="font-medium text-lg text-gray-700">
-          Página {currentPage} de {totalPages}
-        </span>
-
-        <Button
-          variant="outline"
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          disabled={currentPage === totalPages}
-          className="px-6 py-2 rounded-md font-medium text-sm"
-        >
-          Siguiente
-        </Button>
-      </div>
-      <div className="border-t border-gray-300 my-4"></div>
-      <div className="mt-4 text-lg font-semibold text-gray-800 flex justify-center items-center">
-        <span>Total de eventos: </span>
-        <span className="text-xl text-blue-600 ml-2">{totalEventos}</span>
-      </div>
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalEventos}
+        label="eventos"
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

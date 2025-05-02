@@ -13,6 +13,9 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [formError, setFormError] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
   const navigate = useNavigate();
 
   const togglePassword = () => setShowPassword(!showPassword);
@@ -21,18 +24,29 @@ const Register = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (password !== confirmarPassword) {
-      alert("Las contraseñas no coinciden ❌");
-      return;
-    }
+    setFormError("");
 
     try {
+      if (password !== confirmarPassword) {
+        throw new Error("Las contraseñas no coinciden ❌");
+      }
+
       await register(nombreCompleto, email, password);
-      navigate("/");
-    } catch (error) {
+
+      setIsModalOpen(true);
+
+      setTimeout(() => {
+        setIsModalOpen(false);
+        navigate("/");
+      }, 2000);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error("Error en register:", error);
-      alert("Credenciales incorrectas ❌");
+      setFormError(error.message ?? "Error desconocido");
+      setTimeout(() => {
+        setFormError("");
+      }, 2000);
     }
   };
 
@@ -44,6 +58,11 @@ const Register = () => {
           <h2 className="text-3xl font-bold text-center text-green-800 mb-4">
             📝 ¡Regístrate y comienza tu viaje sostenible!
           </h2>
+          {formError && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center">
+              {formError}
+            </div>
+          )}
           <form onSubmit={handleRegister}>
             <label
               htmlFor="nombreCompletto"
@@ -126,6 +145,21 @@ const Register = () => {
               Registrarse ✨
             </button>
           </form>
+
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 transition-opacity duration-300 ease-out">
+              <div className="bg-gradient-to-r from-green-200 to-blue-300 p-8 rounded-lg shadow-2xl max-w-lg w-full transform scale-95 transition-transform duration-300 ease-out hover:scale-100">
+                <div className="flex justify-between items-center">
+                  <p className="text-3xl font-semibold text-black">
+                    ¡Registro Exitoso! 🎉
+                  </p>
+                </div>
+                <p className="text-black mt-4 text-lg">
+                  Tu cuenta ha sido creada con éxito. Serás redirigido en breve.
+                </p>
+              </div>
+            </div>
+          )}
 
           <p className="text-center text-sm text-gray-700 mt-6">
             ¿Ya tienes cuenta?{" "}

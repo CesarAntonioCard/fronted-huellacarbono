@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +29,7 @@ import {
 } from "../../api/roleApi";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faTrash, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { PaginationBar } from "@/components/PaginationBar";
 
 export const Roles = () => {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -37,66 +38,76 @@ export const Roles = () => {
   const [totalRoles, setTotalRoles] = useState(0);
   const [limit] = useState(5);
 
+  const [formError, setFormError] = useState("");
+
   const [newRoleName, setNewRoleName] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+
   const [editRole, setEditRole] = useState<Role | null>(null);
   const [deleteRoleId, setDeleteRoleId] = useState<number | null>(null);
   const [restoreRoleId, setRestoreRoleId] = useState<number | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchRoles = async () => {
+  const [nameFilter, setNameFilter] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("");
+
+  const fetchRoles = useCallback(
+    async (page: number = currentPage) => {
       try {
-        const rolesData = await getRoles(currentPage, limit);
+        const rolesData = await getRoles(page, limit, nameFilter, estadoFilter);
         setRoles(rolesData.roles);
         setTotalPages(rolesData.totalPages);
         setTotalRoles(rolesData.totalRoles);
       } catch (error) {
         console.error("Error al obtener roles:", error);
       }
-    };
+    },
+    [currentPage, limit, nameFilter, estadoFilter]
+  );
 
+  useEffect(() => {
     fetchRoles();
-  }, [currentPage, limit]);
+  }, [fetchRoles]);
 
   const handleCreateRole = async () => {
-    if (newRoleName.trim() === "") {
-      setErrorMessage("El nombre del rol no puede estar vacío.");
-      return;
-    }
+    setFormError("");
 
     try {
-      const role = await createRole(newRoleName);
-      setRoles((prev) => [...prev, role]);
-
-      setTotalRoles((prev) => prev + 1);
-      setTotalPages(Math.ceil((totalRoles + 1) / limit));
-
-      setNewRoleName("");
-      setErrorMessage("");
-      setIsCreateOpen(false);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        const backendMessage =
-          (error as { response?: { data: { message: string } } }).response?.data
-            ?.message ?? "Error al crear rol.";
-        setErrorMessage(backendMessage);
-      } else {
-        setErrorMessage("Error inesperado.");
+      if (newRoleName.trim() === "") {
+        throw new Error("El nombre del rol no puede estar vacío.");
       }
+
+      await createRole(newRoleName);
+      setNewRoleName("");
+      setIsCreateOpen(false);
+      setCurrentPage(1);
+      fetchRoles(1);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error("Error en rol:", error);
+      setFormError(error.message ?? "Error desconocido");
+      setTimeout(() => {
+        setFormError("");
+      }, 2000);
     }
   };
 
   const handleUpdateRole = async () => {
     if (editRole) {
+      setFormError("");
       try {
         const updated = await updateRole(editRole.id, editRole.nombre);
         setRoles((prev) =>
           prev.map((r) => (r.id === editRole.id ? updated : r))
         );
         setEditRole(null);
-      } catch (error) {
-        console.error("Error al actualizar el rol:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.error("Error en rol:", error);
+        setFormError(error.message ?? "Error desconocido");
+        setTimeout(() => {
+          setFormError("");
+        }, 2000);
       }
     }
   };
@@ -136,7 +147,6 @@ export const Roles = () => {
         onOpenChange={(open) => {
           setIsCreateOpen(open);
           if (!open) {
-            setErrorMessage("");
             setNewRoleName("");
           }
         }}
@@ -151,14 +161,16 @@ export const Roles = () => {
               Escribe el nombre del nuevo rol que deseas crear.
             </DialogDescription>
           </DialogHeader>
+          {formError && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center">
+              {formError}
+            </div>
+          )}
           <Input
             value={newRoleName}
             onChange={(e) => setNewRoleName(e.target.value)}
             placeholder="Nombre del rol"
           />
-          {errorMessage && (
-            <p className="text-red-500 text-sm">{errorMessage}</p>
-          )}
           <DialogFooter>
             <Button onClick={handleCreateRole}>Crear</Button>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -167,6 +179,29 @@ export const Roles = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div className="mb-4 flex flex-col md:flex-row flex-wrap gap-4">
+        <div className="w-full md:w-auto">
+          <input
+            type="text"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            placeholder="Filtrar por nombre"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+        <div className="w-full md:w-auto">
+          <select
+            value={estadoFilter}
+            onChange={(e) => setEstadoFilter(e.target.value)}
+            className="w-full border p-2 rounded"
+          >
+            <option value="">Filtrar por estado</option>
+            <option value="ACTIVO">ACTIVO</option>
+            <option value="INACTIVO">INACTIVO</option>
+          </select>
+        </div>
+      </div>
 
       <Table>
         <TableHeader>
@@ -220,36 +255,13 @@ export const Roles = () => {
         </TableBody>
       </Table>
 
-      <div className="flex justify-between items-center mt-4 space-x-4">
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-6 py-2 rounded-md font-medium text-sm"
-        >
-          Anterior
-        </Button>
-
-        <span className="font-medium text-lg text-gray-700">
-          Página {currentPage} de {totalPages}
-        </span>
-
-        <Button
-          variant="outline"
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          disabled={currentPage === totalPages}
-          className="px-6 py-2 rounded-md font-medium text-sm"
-        >
-          Siguiente
-        </Button>
-      </div>
-      <div className="border-t border-gray-300 my-4"></div>
-      <div className="mt-4 text-lg font-semibold text-gray-800 flex justify-center items-center">
-        <span>Total de roles: </span>
-        <span className="text-xl text-blue-600 ml-2">{totalRoles}</span>
-      </div>
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalRoles}
+        label="roles"
+        onPageChange={setCurrentPage}
+      />
 
       {/* Editar rol */}
       <Dialog open={!!editRole} onOpenChange={() => setEditRole(null)}>
@@ -260,6 +272,11 @@ export const Roles = () => {
               Cambia el nombre del rol seleccionado.
             </DialogDescription>
           </DialogHeader>
+          {formError && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center">
+              {formError}
+            </div>
+          )}
           <Input
             value={editRole?.nombre ?? ""}
             onChange={(e) =>
@@ -297,6 +314,7 @@ export const Roles = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Restaurar rol */}
       <Dialog
         open={!!restoreRoleId}
         onOpenChange={() => setRestoreRoleId(null)}
