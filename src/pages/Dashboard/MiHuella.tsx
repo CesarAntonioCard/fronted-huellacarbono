@@ -4,6 +4,8 @@ import axios from "axios";
 import {
   connectToDashboardWebSocket,
   AppUsageEvent,
+  CategoriaData,
+  AplicacionData,
 } from "../../api/updateDashboardApi";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLeaf, faMicrochip, faPlug } from "@fortawesome/free-solid-svg-icons";
@@ -16,28 +18,30 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 const formatFecha = (fecha: Date) => {
   const offsetMs = fecha.getTimezoneOffset() * 60000;
   const localISO = new Date(fecha.getTime() - offsetMs).toISOString();
-  return localISO.split("T")[0]; // Formato YYYY-MM-DD
+  return localISO.split("T")[0];
 };
 
 export const MiHuella = () => {
   const { user } = useAuth();
   const [eventos, setEventos] = useState<AppUsageEvent[]>([]);
   const [eventosPorAplicacion, setEventosPorAplicacion] = useState<
-    AppUsageEvent[]
+    AplicacionData[]
   >([]);
   const [eventosPorCategoria, setEventosPorCategoria] = useState<
-    AppUsageEvent[]
+    CategoriaData[]
   >([]);
   const [fechaInicio, setFechaInicio] = useState<string>(
     formatFecha(new Date())
   );
   const [fechaFin, setFechaFin] = useState<string>(formatFecha(new Date()));
-
   const [horaInicio, setHoraInicio] = useState<string>("00:00");
   const [horaFin, setHoraFin] = useState<string>("23:59");
 
@@ -58,7 +62,6 @@ export const MiHuella = () => {
       }
 
       const response = await axios.get(url);
-      console.log("Respuesta de la API:", response.data);
       if (Array.isArray(response.data)) {
         setEventos(response.data);
       } else {
@@ -76,10 +79,13 @@ export const MiHuella = () => {
 
     try {
       let url = `${apiUrl}/api/time_pc/por-aplicacion?usuario_id=${user.id}`;
+
       if (fechaInicio === fechaFin) {
         url += `&fecha=${fechaInicio}`;
+        url += `&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
       } else {
         url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+        url += `&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
       }
 
       const response = await axios.get(url);
@@ -93,17 +99,20 @@ export const MiHuella = () => {
       console.error("Error al obtener consumo por aplicación:", error);
       setEventosPorAplicacion([]);
     }
-  }, [user?.id, fechaInicio, fechaFin, apiUrl]);
+  }, [user?.id, fechaInicio, fechaFin, horaInicio, horaFin, apiUrl]);
 
   const fetchEventosPorCategoria = useCallback(async () => {
     if (!user?.id) return;
 
     try {
       let url = `${apiUrl}/api/time_pc/por-categoria?usuario_id=${user.id}`;
+
       if (fechaInicio === fechaFin) {
         url += `&fecha=${fechaInicio}`;
+        url += `&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
       } else {
         url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+        url += `&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
       }
 
       const response = await axios.get(url);
@@ -117,7 +126,7 @@ export const MiHuella = () => {
       console.error("Error al obtener consumo por categoría:", error);
       setEventosPorCategoria([]);
     }
-  }, [user?.id, fechaInicio, fechaFin, apiUrl]);
+  }, [user?.id, fechaInicio, fechaFin, horaInicio, horaFin, apiUrl]);
 
   useEffect(() => {
     fetchEventos();
@@ -323,7 +332,6 @@ export const MiHuella = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Tablas de Aplicaciones y Categorías */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             {/* Top de Aplicaciones por Emisión */}
             <div className="bg-white p-4 rounded-2xl shadow-md md:w-1/2">
@@ -340,24 +348,29 @@ export const MiHuella = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {eventosPorAplicacion.slice(0, 5).map((app: any) => {
-                      const totalEmision = app.total_energy_mwh * 0.000475;
-                      const porcentaje = calcularPorcentaje(
-                        app.total_energy_mwh
-                      );
+                    {eventosPorAplicacion
+                      .slice(0, 5)
+                      .map((app: AplicacionData) => {
+                        const totalEmision = app.total_energy_mwh * 0.000475;
+                        const porcentaje = calcularPorcentaje(
+                          app.total_energy_mwh
+                        );
 
-                      return (
-                        <tr key={app.app} className="border-t">
-                          <td className="p-2">{app.app}</td>
-                          <td className="p-2">{totalEmision.toFixed(4)} kg</td>
-                          <td className="p-2">{porcentaje.toFixed(2)}%</td>
-                        </tr>
-                      );
-                    })}
+                        return (
+                          <tr key={app.app} className="border-t">
+                            <td className="p-2">{app.app}</td>
+                            <td className="p-2">
+                              {totalEmision.toFixed(4)} kg
+                            </td>
+                            <td className="p-2">{porcentaje.toFixed(2)}%</td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
             </div>
+            {/* Finde Aplicaciones por Emisión */}
 
             {/* Top de Categorías por Emisión */}
             <div className="bg-white p-4 rounded-2xl shadow-md md:w-1/2">
@@ -365,34 +378,62 @@ export const MiHuella = () => {
                 Top Categorías por Emisión
               </h2>
               <div className="overflow-x-auto">
-                <table className="min-w-full table-auto">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2 text-left">Categoría</th>
-                      <th className="p-2 text-left">Emisión (kg CO₂)</th>
-                      <th className="p-2 text-left">Porcentaje</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {eventosPorCategoria.map((categoria: any) => {
-                      const totalEmision =
-                        categoria.total_energy_mwh * 0.000475;
-                      const porcentaje = calcularPorcentaje(
-                        categoria.total_energy_mwh
-                      );
-
-                      return (
-                        <tr key={categoria.category} className="border-t">
-                          <td className="p-2">{categoria.category}</td>
-                          <td className="p-2">{totalEmision.toFixed(4)} kg</td>
-                          <td className="p-2">{porcentaje.toFixed(2)}%</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={eventosPorCategoria}
+                      dataKey="total_energy_mwh"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      fill="#82ca9d"
+                      label={({ percent }) => `${(percent * 100).toFixed(2)}%`}
+                    >
+                      {eventosPorCategoria.map((categoria, index) => (
+                        <Cell
+                          key={categoria.category}
+                          fill={["#32CD32", "#FFD700", "#FF0000"][index % 3]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ payload }) => {
+                        if (!payload || payload.length === 0) return null;
+                        const data = payload[0].payload as CategoriaData;
+                        const {
+                          category,
+                          total_energy_mwh,
+                          total_duracion_segundos,
+                        } = data;
+                        const totalEmision = total_energy_mwh * 0.000475;
+                        return (
+                          <div className="custom-tooltip bg-white p-2 rounded shadow">
+                            <p>
+                              <strong>Categoría:</strong> {category}
+                            </p>
+                            <p>
+                              <strong>Energía Total:</strong>{" "}
+                              {total_energy_mwh.toFixed(2)} MWh
+                            </p>
+                            <p>
+                              <strong>Duración Total:</strong>{" "}
+                              {total_duracion_segundos} segundos
+                            </p>
+                            <p>
+                              <strong>Emisión:</strong>{" "}
+                              {totalEmision.toFixed(4)} kg
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </div>
+            {/* Fin Top de Categorías por Emisión */}
           </div>
         </>
       )}

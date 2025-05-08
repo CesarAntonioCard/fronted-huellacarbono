@@ -15,7 +15,7 @@ interface EventData {
 }
 
 function Eventos() {
-  const BACKEND_URL = "http://localhost:8000";
+  const BACKEND_URL = import.meta.env.VITE_API_URL;
 
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

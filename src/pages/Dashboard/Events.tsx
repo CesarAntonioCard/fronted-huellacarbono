@@ -31,10 +31,12 @@ import { faEdit, faTrash, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { Input } from "@/components/ui/input";
 import { PaginationBar } from "@/components/PaginationBar";
 
-const defaultImage = "http://localhost:8000/uploads/default-image.webp";
+const defaultImage = `${
+  import.meta.env.VITE_API_URL
+}/uploads/default-image.webp`;
 
 export const Events = () => {
-  const BACKEND_URL = "http://localhost:8000";
+  const BACKEND_URL = import.meta.env.VITE_API_URL;
 
   const [events, setEvents] = useState<Event[]>([]);
   const [currentPage, setCurrentPage] = useState(1);

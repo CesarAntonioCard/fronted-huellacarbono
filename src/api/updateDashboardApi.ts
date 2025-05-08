@@ -9,6 +9,25 @@ export interface AppUsageEvent {
   cpu_usage: number;
 }
 
+export interface TodosEventosResponse {
+  usuario_id: number;
+  nombre_completo: string;
+  total_energy: number;
+  max_energy: number;
+}
+
+export type AplicacionData = {
+  app: string;
+  total_energy_mwh: number;
+  total_duracion_segundos: number;
+};
+
+export type CategoriaData = {
+  category: string;
+  total_energy_mwh: number;
+  total_duracion_segundos: number;
+};
+
 type Callback = (event: AppUsageEvent) => void;
 
 let socket: WebSocket | null = null;
@@ -19,7 +38,7 @@ export const connectToDashboardWebSocket = (
 ) => {
   if (socket && socket.readyState === WebSocket.OPEN) return;
 
-  socket = new WebSocket("ws://localhost:8000");
+  socket = new WebSocket(`${import.meta.env.VITE_WS_URL}`);
 
   socket.onopen = () => {
     console.log("🟢 Conectado al WebSocket");
