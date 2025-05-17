@@ -56,7 +56,7 @@ const Register = () => {
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
         <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-4 border-transparent bg-clip-border animate-border">
           <h2 className="text-3xl font-bold text-center text-green-800 mb-4">
-            📝 ¡Regístrate y comienza tu viaje sostenible!
+            ¡Regístrate y comienza tu viaje sostenible!
           </h2>
           {formError && (
             <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center">
@@ -142,7 +142,7 @@ const Register = () => {
               type="submit"
               className="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700"
             >
-              Registrarse ✨
+              Registrarse
             </button>
           </form>
 

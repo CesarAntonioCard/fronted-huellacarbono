@@ -78,7 +78,7 @@ function Inicio() {
                 puede ayudarte a tomar decisiones más sostenibles.
               </p>
               <Link to="/simulador">
-                <button className="mt-6 px-6 py-3 bg-teal-600 text-green-950 text-lg rounded-full hover:bg-teal-700 transition duration-300">
+                <button className="mt-6 px-6 py-3 bg-teal-600 text-white text-lg rounded-full hover:bg-teal-700 transition duration-300">
                   Calcular Huella de Carbono
                 </button>
               </Link>
@@ -100,7 +100,7 @@ function Inicio() {
                 digital.
               </p>
               <Link to="/simulador">
-                <button className="mt-6 px-6 py-3 bg-teal-600 text-green-950 text-lg rounded-full hover:bg-teal-700 transition duration-300">
+                <button className="mt-6 px-6 py-3 bg-teal-600 text-white text-lg rounded-full hover:bg-teal-700 transition duration-300">
                   Calcular Huella de Carbono
                 </button>
               </Link>
@@ -122,7 +122,7 @@ function Inicio() {
                 reducirlo.
               </p>
               <Link to="/simulador">
-                <button className="mt-6 px-6 py-3 bg-teal-600 text-green-950 text-lg rounded-full hover:bg-teal-700 transition duration-300">
+                <button className="mt-6 px-6 py-3 bg-teal-600 text-white text-lg rounded-full hover:bg-teal-700 transition duration-300">
                   Calcular Huella de Carbono
                 </button>
               </Link>
@@ -144,7 +144,7 @@ function Inicio() {
                 significativamente las emisiones!
               </p>
               <Link to="/simulador">
-                <button className="mt-6 px-6 py-3 bg-teal-600 text-green-950 text-lg rounded-full hover:bg-teal-700 transition duration-300">
+                <button className="mt-6 px-6 py-3 bg-teal-600 text-white text-lg rounded-full hover:bg-teal-700 transition duration-300">
                   Calcular Huella de Carbono
                 </button>
               </Link>

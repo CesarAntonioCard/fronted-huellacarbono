@@ -23,6 +23,9 @@ import {
   Cell,
 } from "recharts";
 
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import PDFReport from "@/components/PDFReport";
+
 const formatFecha = (fecha: Date) => {
   const offsetMs = fecha.getTimezoneOffset() * 60000;
   const localISO = new Date(fecha.getTime() - offsetMs).toISOString();
@@ -45,38 +48,34 @@ export const MiHuella = () => {
   const [horaInicio, setHoraInicio] = useState<string>("00:00");
   const [horaFin, setHoraFin] = useState<string>("23:59");
 
+  const [loadingDatos, setLoadingDatos] = useState(false);
+
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const fetchEventos = useCallback(async () => {
     if (!user?.id) return;
-
+    setLoadingDatos(true);
     try {
       let url = `${apiUrl}/api/time_pc?usuario_id=${user.id}`;
-
       if (fechaInicio === fechaFin) {
-        url += `&fecha=${fechaInicio}`;
-        url += `&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
+        url += `&fecha=${fechaInicio}&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
       } else {
-        url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-        url += `&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
+        url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
       }
 
       const response = await axios.get(url);
-      if (Array.isArray(response.data)) {
-        setEventos(response.data);
-      } else {
-        console.error("Respuesta inesperada:", response.data);
-        setEventos([]);
-      }
+      setEventos(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.error("Error al obtener eventos:", error);
+      console.error("Error al obtener consumo por aplicación:", error);
       setEventos([]);
+    } finally {
+      setLoadingDatos(false);
     }
   }, [user?.id, fechaInicio, fechaFin, horaInicio, horaFin, apiUrl]);
 
   const fetchEventosPorAplicacion = useCallback(async () => {
     if (!user?.id) return;
-
+    setLoadingDatos(true);
     try {
       let url = `${apiUrl}/api/time_pc/por-aplicacion?usuario_id=${user.id}`;
 
@@ -98,12 +97,14 @@ export const MiHuella = () => {
     } catch (error) {
       console.error("Error al obtener consumo por aplicación:", error);
       setEventosPorAplicacion([]);
+    } finally {
+      setLoadingDatos(false);
     }
   }, [user?.id, fechaInicio, fechaFin, horaInicio, horaFin, apiUrl]);
 
   const fetchEventosPorCategoria = useCallback(async () => {
     if (!user?.id) return;
-
+    setLoadingDatos(true);
     try {
       let url = `${apiUrl}/api/time_pc/por-categoria?usuario_id=${user.id}`;
 
@@ -125,6 +126,8 @@ export const MiHuella = () => {
     } catch (error) {
       console.error("Error al obtener consumo por categoría:", error);
       setEventosPorCategoria([]);
+    } finally {
+      setLoadingDatos(false);
     }
   }, [user?.id, fechaInicio, fechaFin, horaInicio, horaFin, apiUrl]);
 
@@ -152,6 +155,9 @@ export const MiHuella = () => {
     eventos.reduce((sum, e) => sum + e.energy_mwh, 0);
 
   const calcularTotalCO2 = () => calcularTotalMwh() * 0.000475;
+
+  const totalMwh = eventos.reduce((sum, e) => sum + e.energy_mwh, 0);
+  const totalCO2 = totalMwh * 0.000475;
 
   const calcularPorcentaje = (valor: number) => {
     const total = calcularTotalMwh();
@@ -227,12 +233,38 @@ export const MiHuella = () => {
         />
       </div>
 
+      {loadingDatos || eventos.length === 0 ? (
+        <button className="bg-gray-400 text-white px-4 py-2 rounded-xl cursor-not-allowed">
+          Exportar a PDF (esperando datos)
+        </button>
+      ) : (
+        <PDFDownloadLink
+          document={
+            <PDFReport
+              eventos={eventos}
+              eventosPorAplicacion={eventosPorAplicacion}
+              eventosPorCategoria={eventosPorCategoria}
+              totalMwh={totalMwh}
+              totalCO2={totalCO2}
+              calcularPorcentaje={calcularPorcentaje}
+            />
+          }
+          fileName="huella_carbono.pdf"
+        >
+          {({ loading }) => (
+            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">
+              {loading ? "Generando PDF..." : "Exportar a PDF"}
+            </button>
+          )}
+        </PDFDownloadLink>
+      )}
+
       {eventos.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">
           No hay datos registrados 📭
         </div>
       ) : (
-        <>
+        <div>
           {/* Consumo total mejorado */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div className="bg-white p-6 rounded-2xl shadow-md flex items-center gap-4 transition hover:shadow-lg">
@@ -435,7 +467,7 @@ export const MiHuella = () => {
             </div>
             {/* Fin Top de Categorías por Emisión */}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

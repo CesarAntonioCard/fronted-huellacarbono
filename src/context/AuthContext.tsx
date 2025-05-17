@@ -8,6 +8,7 @@ export interface AuthUser {
 }
 
 export interface AuthContextType {
+  isLoading: boolean;
   isAuthenticated: boolean;
   user: AuthUser | null;
   login: (userData: AuthUser) => void;

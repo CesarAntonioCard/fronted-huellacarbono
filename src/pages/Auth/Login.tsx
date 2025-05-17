@@ -7,6 +7,7 @@ import { login as loginApi } from "../../api/authApi";
 import { useAuth } from "../../hooks/useAuth";
 
 import "./Border.css";
+import { Input } from "@/components/ui/input";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,7 +17,6 @@ const Login = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
-  const [resetPassword, setResetPassword] = useState("");
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ const Login = () => {
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
         <div className="bg-white p-5 rounded-2xl shadow-xl w-full max-w-md border-4 border-transparent bg-clip-border animate-border">
           <h2 className="text-3xl font-bold text-center text-green-800 mb-4">
-            👋 ¡Bienvenido de nuevo!
+            ¡Bienvenido de nuevo!
           </h2>
           {formError && (
             <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-center">
@@ -57,7 +57,7 @@ const Login = () => {
             <label htmlFor="email" className="block text-green-900 mb-2">
               Correo electrónico
             </label>
-            <input
+            <Input
               id="email"
               type="email"
               className="w-full p-3 mb-4 border border-gray-300 rounded-lg"
@@ -71,7 +71,7 @@ const Login = () => {
               Contraseña
             </label>
             <div className="relative mb-6">
-              <input
+              <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 className="w-full p-3 border border-gray-300 rounded-lg"
@@ -91,18 +91,18 @@ const Login = () => {
                 <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
               </button>
             </div>
-            {/* <button
+            <button
               className="text-sm text-green-700 underline cursor-pointer text-right mb-4"
               onClick={() => setIsModalOpen(true)}
             >
               ¿Olvidaste tu contraseña?
-            </button> */}
+            </button>
 
             <button
               type="submit"
               className="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700"
             >
-              Iniciar Sesión 🚀
+              Iniciar Sesión
             </button>
           </form>
 
@@ -124,26 +124,15 @@ const Login = () => {
               Restablecer contraseña
             </h3>
 
-            <label className="block mb-2 text-sm text-green-900">
-              Correo electrónico
-            </label>
-            <input
+            <Input
               type="email"
+              id="resetEmail"
+              name="email"
+              autoComplete="email"
               className="w-full p-2 mb-4 border border-gray-300 rounded"
               value={resetEmail}
               onChange={(e) => setResetEmail(e.target.value)}
               placeholder="ejemplo@email.com"
-            />
-
-            <label className="block mb-2 text-sm text-green-900">
-              Nueva contraseña
-            </label>
-            <input
-              type="password"
-              className="w-full p-2 mb-4 border border-gray-300 rounded"
-              value={resetPassword}
-              onChange={(e) => setResetPassword(e.target.value)}
-              placeholder="********"
             />
 
             <div className="flex justify-between">
@@ -153,20 +142,20 @@ const Login = () => {
               >
                 Cancelar
               </button>
-              <button
+              <a
+                href={`https://wa.me/51973944957?text=${encodeURIComponent(
+                  `Hola, desearía cambiar la contraseña, el correo de mi cuenta es: ${resetEmail}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => {
-                  console.log(
-                    "Correo:",
-                    resetEmail,
-                    "Nueva contraseña:",
-                    resetPassword
-                  );
                   setIsModalOpen(false);
+                  setResetEmail("");
                 }}
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
               >
-                Restablecer
-              </button>
+                Enviar
+              </a>
             </div>
           </div>
         </div>

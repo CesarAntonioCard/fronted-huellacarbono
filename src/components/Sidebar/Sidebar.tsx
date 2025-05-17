@@ -26,15 +26,16 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    { label: "Gráficos", icon: faChartBar, to: "/dashboard/graficos" },
     ...(user?.rol === "ADMIN"
       ? [
+          { label: "Gráficos", icon: faChartBar, to: "/dashboard/graficos" },
           { label: "Roles", icon: faUsers, to: "/dashboard/roles" },
           { label: "Usuarios", icon: faUser, to: "/dashboard/usuarios" },
           { label: "Eventos", icon: faCalendarAlt, to: "/dashboard/eventos" },
         ]
       : []),
     { label: "Mi Huella", icon: faLeaf, to: "/dashboard/mihuella" },
+    { label: "Perfil", icon: faUser, to: "/dashboard/perfil" },
     { label: "Inicio", icon: faHome, to: "/" },
     { label: "Cerrar sesión", icon: faSignOutAlt, action: handleLogout },
   ];
