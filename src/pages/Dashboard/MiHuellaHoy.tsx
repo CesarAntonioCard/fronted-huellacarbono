@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import axios from "axios";
-import { AppUsageTodayResponse } from "../../api/updateDashboardApi";
+import {
+  connectToDashboardWebSocket,
+  AppUsageTodayResponse,
+  closeDashboardWebSocket,
+} from "../../api/updateDashboardApi";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLeaf, faMicrochip, faPlug } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -17,21 +21,14 @@ import {
   Pie,
   Cell,
 } from "recharts";
+
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import PDFReport from "@/components/PDFReport";
 
-export const MiHuella = () => {
+export const MiHuellaHoy = () => {
   const { user } = useAuth();
 
-  const [fechaInicio, setFechaInicio] = useState<string>("");
-  const [fechaFin, setFechaFin] = useState<string>("");
-  const [horaInicio, setHoraInicio] = useState<string>("00:00");
-  const [horaFin, setHoraFin] = useState<string>("23:59");
-
-  const hoy = new Date().toISOString().split("T")[0];
-  const ayer = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
-  const [dataFiltros, setDataFiltros] = useState<AppUsageTodayResponse>({
+  const [dataHoy, setDataHoy] = useState<AppUsageTodayResponse>({
     resumen: {
       total_registros: 0,
       total_energy_mwh: 0,
@@ -42,7 +39,7 @@ export const MiHuella = () => {
     por_categoria: [],
   });
 
-  const dataFiltrosRef = useRef<AppUsageTodayResponse>({
+  const dataHoyRef = useRef<AppUsageTodayResponse>({
     resumen: {
       total_registros: 0,
       total_energy_mwh: 0,
@@ -58,37 +55,6 @@ export const MiHuella = () => {
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const fetchFiltrado = async () => {
-    if (!user?.id) return;
-
-    setLoadingDatos(true);
-    setError(null);
-
-    try {
-      const url = `${apiUrl}/api/time_pc/filtrado?usuario_id=${user.id}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&hora_inicio=${horaInicio}&hora_fin=${horaFin}`;
-      const response = await axios.get<AppUsageTodayResponse>(url);
-      setDataFiltros(response.data);
-      dataFiltrosRef.current = response.data;
-    } catch (error) {
-      console.error("Error al obtener datos filtrados:", error);
-      setError("Error al cargar datos filtrados.");
-      const emptyData: AppUsageTodayResponse = {
-        resumen: {
-          total_registros: 0,
-          total_energy_mwh: 0,
-          total_hca: 0,
-        },
-        registros: [],
-        por_aplicacion: [],
-        por_categoria: [],
-      };
-      setDataFiltros(emptyData);
-      dataFiltrosRef.current = emptyData;
-    } finally {
-      setLoadingDatos(false);
-    }
-  };
-
   useEffect(() => {
     const fetchEventosHoy = async () => {
       if (!user?.id) return;
@@ -96,10 +62,10 @@ export const MiHuella = () => {
       setError(null);
 
       try {
-        const url = `${apiUrl}/api/time_pc/filtrado?usuario_id=${user.id}`;
+        const url = `${apiUrl}/api/time_pc/hoy?usuario_id=${user.id}`;
         const response = await axios.get<AppUsageTodayResponse>(url);
-        setDataFiltros(response.data);
-        dataFiltrosRef.current = response.data;
+        setDataHoy(response.data);
+        dataHoyRef.current = response.data;
       } catch (error) {
         console.error("Error al obtener consumo por aplicación:", error);
         setError("Error al cargar datos de hoy.");
@@ -113,14 +79,32 @@ export const MiHuella = () => {
           por_aplicacion: [],
           por_categoria: [],
         };
-        setDataFiltros(emptyData);
-        dataFiltrosRef.current = emptyData;
+        setDataHoy(emptyData);
+        dataHoyRef.current = emptyData;
       } finally {
         setLoadingDatos(false);
       }
     };
 
     fetchEventosHoy();
+
+    if (!user?.id) return;
+
+    const userIdNumber = Number(user.id);
+
+    connectToDashboardWebSocket(
+      {
+        updateDashboardToday: (newData) => {
+          setDataHoy(newData);
+          dataHoyRef.current = newData;
+        },
+      },
+      userIdNumber
+    );
+
+    return () => {
+      closeDashboardWebSocket();
+    };
   }, [user, apiUrl]);
 
   if (error) return <div className="text-center text-red-500 p-6">{error}</div>;
@@ -134,82 +118,13 @@ export const MiHuella = () => {
   }
 
   const calcularPorcentaje = (valor: number) =>
-    (valor / dataFiltros.resumen.total_energy_mwh) * 100 || 0;
+    (valor / dataHoy.resumen.total_energy_mwh) * 100 || 0;
 
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Mi Huella de Carbono</h1>
 
-      <div className="mb-6 flex flex-wrap gap-4 items-center">
-        <button
-          onClick={() => {
-            setFechaInicio(ayer);
-            setFechaFin(ayer);
-            setHoraInicio("00:00");
-            setHoraFin("23:59");
-          }}
-          className="bg-gray-100 hover:bg-gray-200 text-sm px-4 py-2 rounded-xl"
-        >
-          Día de Ayer
-        </button>
-        <button
-          onClick={() => {
-            setFechaInicio(hoy);
-            setFechaFin(hoy);
-            setHoraInicio("00:00");
-            setHoraFin("23:59");
-          }}
-          className="bg-gray-100 hover:bg-gray-200 text-sm px-4 py-2 rounded-xl"
-        >
-          Hoy
-        </button>
-        <span className="mx-2 text-sm">Desde:</span>
-        <input
-          type="date"
-          value={fechaInicio}
-          onChange={(e) => setFechaInicio(e.target.value)}
-          className="border px-2 py-1 rounded-lg text-sm"
-        />
-        <span className="mx-2 text-sm">Hasta:</span>
-        <input
-          type="date"
-          value={fechaFin}
-          onChange={(e) => setFechaFin(e.target.value)}
-          className="border px-2 py-1 rounded-lg text-sm"
-        />
-
-        <span className="mx-2 text-sm">Desde Hora:</span>
-        <input
-          type="time"
-          value={horaInicio}
-          onChange={(e) => setHoraInicio(e.target.value)}
-          className="border px-2 py-1 rounded-lg text-sm"
-        />
-        <span className="mx-2 text-sm">Hasta Hora:</span>
-        <input
-          type="time"
-          value={horaFin}
-          onChange={(e) => setHoraFin(e.target.value)}
-          className="border px-2 py-1 rounded-lg text-sm"
-        />
-        <button
-          onClick={fetchFiltrado}
-          className={`px-4 py-2 rounded-xl text-white ${
-            !fechaInicio || !fechaFin
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
-          }`}
-          disabled={
-            !fechaInicio ||
-            !fechaFin ||
-            new Date(fechaInicio) > new Date(fechaFin)
-          }
-        >
-          Filtrar
-        </button>
-      </div>
-
-      {loadingDatos || dataFiltros.registros.length === 0 ? (
+      {loadingDatos || dataHoy.registros.length === 0 ? (
         <button className="bg-gray-400 text-white px-4 py-2 rounded-xl cursor-not-allowed">
           Exportar a PDF (esperando datos)
         </button>
@@ -217,7 +132,7 @@ export const MiHuella = () => {
         <PDFDownloadLink
           document={
             <PDFReport
-              dataHoy={dataFiltros}
+              dataHoy={dataHoy}
               calcularPorcentaje={calcularPorcentaje}
             />
           }
@@ -230,8 +145,7 @@ export const MiHuella = () => {
           )}
         </PDFDownloadLink>
       )}
-
-      {dataFiltros.registros.length === 0 ? (
+      {dataHoy.registros.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">
           No hay datos registrados 📭
         </div>
@@ -245,7 +159,7 @@ export const MiHuella = () => {
               <div>
                 <p className="text-sm text-gray-500">Consumo Energético</p>
                 <p className="text-2xl font-semibold text-gray-800">
-                  {dataFiltros.resumen.total_energy_mwh.toFixed(4)} mWh
+                  {dataHoy.resumen.total_energy_mwh.toFixed(4)} mWh
                 </p>
               </div>
             </div>
@@ -257,7 +171,7 @@ export const MiHuella = () => {
               <div>
                 <p className="text-sm text-gray-500">Eventos Registrados</p>
                 <p className="text-2xl font-semibold text-gray-800">
-                  {dataFiltros.resumen.total_registros}
+                  {dataHoy.resumen.total_registros}
                 </p>
               </div>
             </div>
@@ -269,7 +183,7 @@ export const MiHuella = () => {
               <div>
                 <p className="text-sm text-gray-500">Huella CO₂ estimada</p>
                 <p className="text-2xl font-semibold text-gray-800">
-                  {dataFiltros.resumen.total_hca.toFixed(4)} kg
+                  {dataHoy.resumen.total_hca.toFixed(4)} kg
                 </p>
               </div>
             </div>
@@ -278,7 +192,7 @@ export const MiHuella = () => {
           <div className="bg-white p-4 rounded-2xl shadow-md mb-8">
             <h2 className="text-xl font-semibold mb-4">Consumo </h2>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={dataFiltros.registros}>
+              <AreaChart data={dataHoy.registros}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="start_time"
@@ -352,7 +266,7 @@ export const MiHuella = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {dataFiltros.por_aplicacion.map((app) => {
+                    {dataHoy.por_aplicacion.map((app) => {
                       const totalEmision = app.total_energy_mwh * 0.000475;
                       const porcentaje = calcularPorcentaje(
                         app.total_energy_mwh
@@ -381,7 +295,7 @@ export const MiHuella = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={dataFiltros.por_categoria}
+                      data={dataHoy.por_categoria}
                       dataKey="total_energy_mwh"
                       nameKey="category"
                       cx="50%"
@@ -390,7 +304,7 @@ export const MiHuella = () => {
                       fill="#82ca9d"
                       label={({ percent }) => `${(percent * 100).toFixed(2)}%`}
                     >
-                      {dataFiltros.por_categoria.map((categoria, index) => (
+                      {dataHoy.por_categoria.map((categoria, index) => (
                         <Cell
                           key={categoria.category}
                           fill={["#32CD32", "#FFD700", "#FF0000"][index % 3]}
@@ -401,7 +315,7 @@ export const MiHuella = () => {
                       content={({ payload }) => {
                         if (!payload || payload.length === 0) return null;
                         const data = payload[0]
-                          .payload as (typeof dataFiltros.por_categoria)[0];
+                          .payload as (typeof dataHoy.por_categoria)[0];
                         const totalEmision = data.total_energy_mwh * 0.000475;
                         return (
                           <div className="custom-tooltip bg-white p-2 rounded shadow">

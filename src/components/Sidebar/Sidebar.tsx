@@ -5,9 +5,12 @@ import {
   faUsers,
   faUser,
   faCalendarAlt,
-  faLeaf,
   faSignOutAlt,
   faBars,
+  faTree,
+  faClockRotateLeft,
+  faLightbulb,
+  faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -34,7 +37,18 @@ const Sidebar = () => {
           { label: "Eventos", icon: faCalendarAlt, to: "/dashboard/eventos" },
         ]
       : []),
-    { label: "Mi Huella", icon: faLeaf, to: "/dashboard/mihuella" },
+    { label: "Mi Huella", icon: faTree, to: "/dashboard/mihuella" },
+    {
+      label: "Historial Huella",
+      icon: faClockRotateLeft,
+      to: "/dashboard/historialdemihuella",
+    },
+    {
+      label: "Recomendaciones",
+      icon: faLightbulb,
+      to: "/dashboard/recomendaciones",
+    },
+    { label: "Ranking", icon: faTrophy, to: "/dashboard/ranking" },
     { label: "Perfil", icon: faUser, to: "/dashboard/perfil" },
     { label: "Inicio", icon: faHome, to: "/" },
     { label: "Cerrar sesión", icon: faSignOutAlt, action: handleLogout },
@@ -43,7 +57,7 @@ const Sidebar = () => {
   return (
     <div
       className={`bg-white border-r border-teal-200 h-screen p-4 flex flex-col transition-all duration-300 ${
-        collapsed ? "w-20" : "w-64"
+        collapsed ? "w-15" : "w-50"
       }`}
     >
       <button

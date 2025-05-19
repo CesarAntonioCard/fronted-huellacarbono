@@ -13,6 +13,9 @@ import { MiHuella } from "./pages/Dashboard/MiHuella";
 import { Events } from "./pages/Dashboard/Events";
 import { useAuth } from "./context/AuthContext";
 import { Perfil } from "./pages/Dashboard/Perfil";
+import { MiHuellaHoy } from "./pages/Dashboard/MiHuellaHoy";
+import { Recomendaciones } from "./pages/Dashboard/Recomendaciones";
+import { Ranking } from "./pages/Dashboard/Ranking";
 
 export const RequireAuth = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -37,7 +40,10 @@ function App() {
           <Route path="roles" element={<Roles />} />
           <Route path="usuarios" element={<Usuarios />} />
           <Route path="eventos" element={<Events />} />
-          <Route path="mihuella" element={<MiHuella />} />
+          <Route path="historialdemihuella" element={<MiHuella />} />
+          <Route path="mihuella" element={<MiHuellaHoy />} />
+          <Route path="recomendaciones" element={<Recomendaciones />} />
+          <Route path="ranking" element={<Ranking />} />
           <Route path="perfil" element={<Perfil />} />
         </Route>
       </Route>

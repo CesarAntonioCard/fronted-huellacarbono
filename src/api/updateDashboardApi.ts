@@ -1,12 +1,49 @@
 export interface AppUsageEvent {
   usuario_id: number;
   app: string;
-  category: string;
+  category: "Light" | "Medium" | "Heavy";
   startTime: string;
   endTime: string;
   duration_seconds: number;
   energy_mwh: number;
-  cpu_usage: number;
+  cpu_usage?: number;
+  hca?: number;
+  tipo?: string;
+}
+
+export interface AppEnergySummary {
+  app: string;
+  total_energy_mwh: number;
+  total_hca: number;
+  total_duracion_segundos: number;
+}
+
+export interface CategoryEnergySummary {
+  category: "Light" | "Medium" | "Heavy";
+  total_energy_mwh: number;
+  total_hca: number;
+  total_duracion_segundos: number;
+}
+
+export interface AppUsageTodayResponse {
+  resumen: {
+    total_registros: number;
+    total_energy_mwh: number;
+    total_hca: number;
+  };
+  registros: AppUsageEvent[];
+  por_aplicacion: AppEnergySummary[];
+  por_categoria: CategoryEnergySummary[];
+}
+
+export interface Top3User {
+  usuario_id: number;
+  nombre: string;
+  total_hca: number;
+}
+
+export interface Top3UserResponse {
+  top3: Top3User[];
 }
 
 export interface TodosEventosResponse {
@@ -28,13 +65,22 @@ export type CategoriaData = {
   total_duracion_segundos: number;
 };
 
-type Callback = (event: AppUsageEvent) => void;
+type WebSocketMessage =
+  | { type: "updateDashboard"; data: AppUsageEvent }
+  | { type: "updateDashboardToday"; data: AppUsageTodayResponse }
+  | { type: "updateTop3"; data: Top3User[] };
+
+type MessageHandlerMap = {
+  updateDashboard: (data: AppUsageEvent) => void;
+  updateDashboardToday: (data: AppUsageTodayResponse) => void;
+  updateTop3: (data: Top3User[]) => void;
+};
 
 let socket: WebSocket | null = null;
 
 export const connectToDashboardWebSocket = (
-  onData: Callback,
-  usuario_id: number
+  handlers: Partial<MessageHandlerMap>,
+  usuario_id?: number
 ) => {
   if (socket && socket.readyState === WebSocket.OPEN) return;
 
@@ -45,15 +91,26 @@ export const connectToDashboardWebSocket = (
     socket?.send(
       JSON.stringify({
         type: "handshake",
-        data: { usuario_id, tipo_cliente: "pc" },
+        data: { usuario_id: usuario_id ?? null, tipo_cliente: "pc" },
       })
     );
   };
 
   socket.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    if (message.type === "updateDashboard") {
-      onData(message.data);
+    const message: WebSocketMessage = JSON.parse(event.data);
+
+    switch (message.type) {
+      case "updateDashboard":
+        handlers.updateDashboard?.(message.data);
+        break;
+      case "updateDashboardToday":
+        handlers.updateDashboardToday?.(message.data);
+        break;
+      case "updateTop3":
+        handlers.updateTop3?.(message.data);
+        break;
+      default:
+        console.warn("📬 Tipo de mensaje no manejado:", message);
     }
   };
 
@@ -63,5 +120,13 @@ export const connectToDashboardWebSocket = (
 
   socket.onclose = () => {
     console.warn("🔌 WebSocket cerrado");
+    socket = null;
   };
+};
+
+export const closeDashboardWebSocket = () => {
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
 };

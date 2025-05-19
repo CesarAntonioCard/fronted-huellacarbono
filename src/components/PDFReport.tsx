@@ -1,9 +1,9 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
-  AplicacionData,
-  AppUsageEvent,
-  CategoriaData,
+  AppEnergySummary,
+  AppUsageTodayResponse,
+  CategoryEnergySummary,
 } from "@/api/updateDashboardApi";
 
 const styles = StyleSheet.create({
@@ -82,22 +82,24 @@ const styles = StyleSheet.create({
 });
 
 interface PDFReportProps {
-  eventos: AppUsageEvent[];
-  eventosPorAplicacion: AplicacionData[];
-  eventosPorCategoria: CategoriaData[];
-  totalMwh: number;
-  totalCO2: number;
+  dataHoy: AppUsageTodayResponse;
   calcularPorcentaje: (valor: number) => number;
 }
 
 const PDFReport: React.FC<PDFReportProps> = ({
-  eventos,
-  eventosPorAplicacion,
-  eventosPorCategoria,
-  totalMwh,
-  totalCO2,
+  dataHoy,
   calcularPorcentaje,
 }) => {
+  const {
+    resumen,
+    por_aplicacion: eventosPorAplicacion,
+    por_categoria: eventosPorCategoria,
+    registros,
+  } = dataHoy;
+
+  const totalMwh = resumen.total_energy_mwh;
+  const totalCO2 = resumen.total_hca;
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -106,17 +108,17 @@ const PDFReport: React.FC<PDFReportProps> = ({
         <View style={styles.card}>
           <Text style={styles.summaryText}>
             <Text style={{ fontWeight: "bold" }}>
-              Total Consumo Energético:
-            </Text>{" "}
+              Total Consumo Energético:{" "}
+            </Text>
             {Number.isFinite(totalMwh) ? totalMwh.toFixed(2) : "0.00"} mWh
           </Text>
           <Text style={styles.summaryText}>
-            <Text style={{ fontWeight: "bold" }}>Huella CO₂ estimada:</Text>{" "}
+            <Text style={{ fontWeight: "bold" }}>Huella CO₂ estimada: </Text>
             {Number.isFinite(totalCO2) ? totalCO2.toFixed(4) : "0.0000"} kg
           </Text>
           <Text style={styles.summaryText}>
-            <Text style={{ fontWeight: "bold" }}>Eventos Registrados:</Text>{" "}
-            {eventos.length}
+            <Text style={{ fontWeight: "bold" }}>Eventos Registrados: </Text>
+            {registros.length}
           </Text>
         </View>
 
@@ -126,27 +128,33 @@ const PDFReport: React.FC<PDFReportProps> = ({
             <View style={styles.tableHeader}>
               <Text style={styles.cell}>Aplicación</Text>
               <Text style={styles.cellNumeric}>Emisión (kg CO₂)</Text>
+              <Text style={styles.cellNumeric}>Duración (seg)</Text>
               <Text style={styles.cellNumeric}>%</Text>
             </View>
-            {eventosPorAplicacion.slice(0, 5).map((app, idx) => (
-              <View
-                key={app.app}
-                style={[
-                  styles.tableRow,
-                  ...(idx === eventosPorAplicacion.slice(0, 5).length - 1
-                    ? [styles.tableRowLast]
-                    : []),
-                ]}
-              >
-                <Text style={styles.cell}>{app.app}</Text>
-                <Text style={styles.cellNumeric}>
-                  {(app.total_energy_mwh * 0.000475).toFixed(4)}
-                </Text>
-                <Text style={styles.cellNumeric}>
-                  {calcularPorcentaje(app.total_energy_mwh).toFixed(2)}%
-                </Text>
-              </View>
-            ))}
+            {eventosPorAplicacion
+              .slice(0, 5)
+              .map((app: AppEnergySummary, idx: number) => (
+                <View
+                  key={app.app}
+                  style={[
+                    styles.tableRow,
+                    ...(idx === eventosPorAplicacion.slice(0, 5).length - 1
+                      ? [styles.tableRowLast]
+                      : []),
+                  ]}
+                >
+                  <Text style={styles.cell}>{app.app}</Text>
+                  <Text style={styles.cellNumeric}>
+                    {app.total_hca.toFixed(4)}
+                  </Text>
+                  <Text style={styles.cellNumeric}>
+                    {app.total_duracion_segundos ?? "-"}{" "}
+                  </Text>
+                  <Text style={styles.cellNumeric}>
+                    {calcularPorcentaje(app.total_energy_mwh).toFixed(2)}%
+                  </Text>
+                </View>
+              ))}
           </View>
         </View>
 
@@ -158,29 +166,32 @@ const PDFReport: React.FC<PDFReportProps> = ({
               <Text style={styles.cellNumeric}>Emisión (kg CO₂)</Text>
               <Text style={styles.cellNumeric}>Duración (seg)</Text>
             </View>
-            {eventosPorCategoria.slice(0, 5).map((cat, idx) => (
-              <View
-                key={cat.category}
-                style={[
-                  styles.tableRow,
-                  ...(idx === eventosPorCategoria.slice(0, 5).length - 1
-                    ? [styles.tableRowLast]
-                    : []),
-                ]}
-              >
-                <Text style={styles.cell}>{cat.category}</Text>
-                <Text style={styles.cellNumeric}>
-                  {(cat.total_energy_mwh * 0.000475).toFixed(4)}
-                </Text>
-                <Text style={styles.cellNumeric}>
-                  {cat.total_duracion_segundos}
-                </Text>
-              </View>
-            ))}
+            {eventosPorCategoria
+              .slice(0, 5)
+              .map((cat: CategoryEnergySummary, idx: number) => (
+                <View
+                  key={cat.category}
+                  style={[
+                    styles.tableRow,
+                    ...(idx === eventosPorCategoria.slice(0, 5).length - 1
+                      ? [styles.tableRowLast]
+                      : []),
+                  ]}
+                >
+                  <Text style={styles.cell}>{cat.category}</Text>
+                  <Text style={styles.cellNumeric}>
+                    {cat.total_hca.toFixed(4)}
+                  </Text>
+                  <Text style={styles.cellNumeric}>
+                    {cat.total_duracion_segundos ?? "-"}
+                  </Text>
+                </View>
+              ))}
           </View>
         </View>
       </Page>
     </Document>
   );
 };
+
 export default PDFReport;
