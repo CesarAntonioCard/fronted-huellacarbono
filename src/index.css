@@ -135,3 +135,11 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+input[type="date"] {
+  color-scheme: light;
+}
+
+input[type="time"] {
+  color-scheme: light;
+}

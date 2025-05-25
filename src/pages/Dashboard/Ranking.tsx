@@ -2,12 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy, faMedal, faStar } from "@fortawesome/free-solid-svg-icons";
-import {
-  closeDashboardWebSocket,
-  connectToDashboardWebSocket,
-  Top3User,
-  Top3UserResponse,
-} from "@/api/updateDashboardApi";
+import { useWebSocket } from "@/context/WebSocketContext";
+import { Top3User, Top3UserResponse } from "@/api/updateDashboardApi";
 
 const iconos = [faTrophy, faMedal, faStar];
 const coloresFondo = ["bg-yellow-100", "bg-gray-200", "bg-orange-100"];
@@ -27,6 +23,8 @@ export const Ranking = () => {
   const top3Ref = useRef<Top3User[]>([]);
 
   const apiUrl = import.meta.env.VITE_API_URL;
+
+  const { registerHandlers } = useWebSocket();
 
   useEffect(() => {
     const fetchTop3 = async () => {
@@ -48,16 +46,13 @@ export const Ranking = () => {
 
     fetchTop3();
 
-    connectToDashboardWebSocket({
-      updateTop3: (newTop3) => {
-        setTop3(newTop3);
-        top3Ref.current = newTop3;
+    registerHandlers({
+      updateTop3: (data: Top3UserResponse) => {
+        setTop3(data.top3);
+        top3Ref.current = data.top3;
       },
     });
-    return () => {
-      closeDashboardWebSocket();
-    };
-  }, [apiUrl]);
+  }, [apiUrl, registerHandlers]);
 
   if (loading)
     return (

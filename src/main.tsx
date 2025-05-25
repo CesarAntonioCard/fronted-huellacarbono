@@ -3,6 +3,7 @@ import { BrowserRouter as Router } from "react-router-dom";
 import App from "./app";
 import { AuthProvider } from "./context/AuthProvider";
 import "./index.css";
+import { WebSocketProvider } from "./context/WebSocketContext";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -11,7 +12,9 @@ const root = ReactDOM.createRoot(
 root.render(
   <Router>
     <AuthProvider>
-      <App />
+      <WebSocketProvider>
+        <App />
+      </WebSocketProvider>
     </AuthProvider>
   </Router>
 );

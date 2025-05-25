@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import axios from "axios";
-import {
-  connectToDashboardWebSocket,
-  AppUsageTodayResponse,
-  closeDashboardWebSocket,
-} from "../../api/updateDashboardApi";
+import { AppUsageTodayResponse } from "../../api/updateDashboardApi";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLeaf, faMicrochip, faPlug } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -24,6 +20,8 @@ import {
 
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import PDFReport from "@/components/PDFReport";
+
+import { useWebSocket } from "@/context/WebSocketContext";
 
 export const MiHuellaHoy = () => {
   const { user } = useAuth();
@@ -54,6 +52,10 @@ export const MiHuellaHoy = () => {
   const [error, setError] = useState<string | null>(null);
 
   const apiUrl = import.meta.env.VITE_API_URL;
+
+  const { registerHandlers } = useWebSocket();
+
+  const [xInterval, setXInterval] = useState<number | "preserveStartEnd">(0);
 
   useEffect(() => {
     const fetchEventosHoy = async () => {
@@ -90,22 +92,27 @@ export const MiHuellaHoy = () => {
 
     if (!user?.id) return;
 
-    const userIdNumber = Number(user.id);
-
-    connectToDashboardWebSocket(
-      {
-        updateDashboardToday: (newData) => {
-          setDataHoy(newData);
-          dataHoyRef.current = newData;
-        },
+    registerHandlers({
+      updateDashboardToday: (newData: AppUsageTodayResponse) => {
+        setDataHoy(newData);
+        dataHoyRef.current = newData;
       },
-      userIdNumber
-    );
+    });
+  }, [user, apiUrl, registerHandlers]);
 
-    return () => {
-      closeDashboardWebSocket();
-    };
-  }, [user, apiUrl]);
+  useEffect(() => {
+    function updateInterval() {
+      if (window.innerWidth < 640) {
+        setXInterval(30);
+      } else {
+        setXInterval("preserveStartEnd");
+      }
+    }
+
+    updateInterval();
+    window.addEventListener("resize", updateInterval);
+    return () => window.removeEventListener("resize", updateInterval);
+  }, []);
 
   if (error) return <div className="text-center text-red-500 p-6">{error}</div>;
 
@@ -189,65 +196,69 @@ export const MiHuellaHoy = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl shadow-md mb-8">
-            <h2 className="text-xl font-semibold mb-4">Consumo </h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={dataHoy.registros}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="start_time"
-                  tickFormatter={(str) => {
-                    const date = new Date(str);
-                    return isNaN(date.getTime())
-                      ? ""
-                      : date.toLocaleTimeString("es-ES", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          timeZone: "America/Lima",
-                        });
-                  }}
-                />
-                <YAxis
-                  label={{
-                    value: "Consumo (mWh)",
-                    angle: -90,
-                    position: "insideLeft",
-                  }}
-                />
-                <Tooltip
-                  labelFormatter={(str) => {
-                    const date = new Date(str);
-                    return isNaN(date.getTime())
-                      ? ""
-                      : date.toLocaleString("es-ES", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          timeZone: "America/Lima",
-                        });
-                  }}
-                />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="cpu_usage"
-                  stroke="#8884d8"
-                  fill="#8884d8"
-                  fillOpacity={0.3}
-                  name="CPU Usage"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="energy_mwh"
-                  stroke="#82ca9d"
-                  fill="#82ca9d"
-                  fillOpacity={0.3}
-                  name="Energía (mWh)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="bg-white p-4 rounded-2xl shadow-md mb-8 overflow-x-auto">
+            <h2 className="text-xl font-semibold mb-4">Consumo</h2>
+            <div className="w-full h-[200px] sm:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dataHoy.registros}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="start_time"
+                    interval={xInterval}
+                    minTickGap={20}
+                    tickFormatter={(str) => {
+                      const date = new Date(str);
+                      return isNaN(date.getTime())
+                        ? ""
+                        : date.toLocaleTimeString("es-ES", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "America/Lima",
+                          });
+                    }}
+                  />
+                  <YAxis
+                    label={{
+                      value: "Consumo (mWh)",
+                      angle: -90,
+                      position: "insideLeft",
+                    }}
+                  />
+                  <Tooltip
+                    labelFormatter={(str) => {
+                      const date = new Date(str);
+                      return isNaN(date.getTime())
+                        ? ""
+                        : date.toLocaleString("es-ES", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            timeZone: "America/Lima",
+                          });
+                    }}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="cpu_usage"
+                    stroke="#8884d8"
+                    fill="#8884d8"
+                    fillOpacity={0.3}
+                    name="CPU Usage"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="energy_mwh"
+                    stroke="#82ca9d"
+                    fill="#82ca9d"
+                    fillOpacity={0.3}
+                    name="Energía (mWh)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mb-8">

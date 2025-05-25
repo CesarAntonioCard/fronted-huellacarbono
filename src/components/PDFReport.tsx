@@ -4,6 +4,7 @@ import {
   AppEnergySummary,
   AppUsageTodayResponse,
   CategoryEnergySummary,
+  UserEnergyData,
 } from "@/api/updateDashboardApi";
 
 const styles = StyleSheet.create({
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
 });
 
 interface PDFReportProps {
-  dataHoy: AppUsageTodayResponse;
+  dataHoy: UserEnergyData | AppUsageTodayResponse;
   calcularPorcentaje: (valor: number) => number;
 }
 

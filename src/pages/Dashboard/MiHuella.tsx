@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import PDFReport from "@/components/PDFReport";
+import { getFechaAyerLima, getFechaLima } from "@/lib/dateUtils";
 
 export const MiHuella = () => {
   const { user } = useAuth();
@@ -28,8 +29,8 @@ export const MiHuella = () => {
   const [horaInicio, setHoraInicio] = useState<string>("00:00");
   const [horaFin, setHoraFin] = useState<string>("23:59");
 
-  const hoy = new Date().toISOString().split("T")[0];
-  const ayer = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const hoy = getFechaLima();
+  const ayer = getFechaAyerLima();
 
   const [dataFiltros, setDataFiltros] = useState<AppUsageTodayResponse>({
     resumen: {
@@ -286,7 +287,7 @@ export const MiHuella = () => {
                     const date = new Date(str);
                     return isNaN(date.getTime())
                       ? ""
-                      : date.toLocaleTimeString("es-ES", {
+                      : date.toLocaleTimeString("es-PE", {
                           hour: "2-digit",
                           minute: "2-digit",
                           timeZone: "America/Lima",
@@ -305,7 +306,7 @@ export const MiHuella = () => {
                     const date = new Date(str);
                     return isNaN(date.getTime())
                       ? ""
-                      : date.toLocaleString("es-ES", {
+                      : date.toLocaleString("es-PE", {
                           hour: "2-digit",
                           minute: "2-digit",
                           day: "2-digit",

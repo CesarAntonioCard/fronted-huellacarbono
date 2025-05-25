@@ -4,7 +4,6 @@ import axios from "axios";
 import {
   AppEnergySummary,
   AppUsageTodayResponse,
-  connectToDashboardWebSocket,
 } from "@/api/updateDashboardApi";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,6 +12,8 @@ import {
   faExclamationTriangle,
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
+
+import { useWebSocket } from "@/context/WebSocketContext";
 
 const iconos = [
   faExclamationCircle,
@@ -74,7 +75,6 @@ function generarMensaje(app: string): string {
 
 export const Recomendaciones = () => {
   const { user } = useAuth();
-  const apiUrl = import.meta.env.VITE_API_URL;
 
   const [recomendaciones, setRecomendaciones] = useState<
     { app: string; mensaje: string }[]
@@ -83,6 +83,10 @@ export const Recomendaciones = () => {
 
   const appsRef = useRef<AppEnergySummary[]>([]);
   const dataHoyRef = useRef<AppUsageTodayResponse | null>(null);
+
+  const apiUrl = import.meta.env.VITE_API_URL;
+
+  const { registerHandlers } = useWebSocket();
 
   const actualizarRecomendaciones = (apps: AppEnergySummary[]) => {
     const topApps = [...apps]
@@ -130,19 +134,14 @@ export const Recomendaciones = () => {
 
     fetchEventosHoy();
 
-    const userIdNumber = Number(user.id);
-
-    connectToDashboardWebSocket(
-      {
-        updateDashboardToday: (newData: AppUsageTodayResponse) => {
-          dataHoyRef.current = newData;
-          appsRef.current = newData.por_aplicacion || [];
-          actualizarRecomendaciones(appsRef.current);
-        },
+    registerHandlers({
+      updateDashboardToday: (newData: AppUsageTodayResponse) => {
+        dataHoyRef.current = newData;
+        appsRef.current = newData.por_aplicacion || [];
+        actualizarRecomendaciones(appsRef.current);
       },
-      userIdNumber
-    );
-  }, [user, fetchEventosHoy]);
+    });
+  }, [user, fetchEventosHoy, registerHandlers]);
 
   if (!user?.id) {
     return (

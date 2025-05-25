@@ -11,14 +11,18 @@ import {
   faClockRotateLeft,
   faLightbulb,
   faTrophy,
+  faUserCog,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
-import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 
-const Sidebar = () => {
+interface SidebarProps {
+  collapsed: boolean;
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
   const { logout, user } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -28,15 +32,15 @@ const Sidebar = () => {
     setCollapsed((prev) => !prev);
   };
 
+  const handleItemClick = () => {
+    setCollapsed(true);
+  };
+
   const menuItems = [
     ...(user?.rol === "ADMIN"
-      ? [
-          { label: "Gráficos", icon: faChartBar, to: "/dashboard/graficos" },
-          { label: "Roles", icon: faUsers, to: "/dashboard/roles" },
-          { label: "Usuarios", icon: faUser, to: "/dashboard/usuarios" },
-          { label: "Eventos", icon: faCalendarAlt, to: "/dashboard/eventos" },
-        ]
+      ? [{ label: "Gráficos", icon: faChartBar, to: "/dashboard/graficos" }]
       : []),
+
     { label: "Mi Huella", icon: faTree, to: "/dashboard/mihuella" },
     {
       label: "Historial Huella",
@@ -48,7 +52,16 @@ const Sidebar = () => {
       icon: faLightbulb,
       to: "/dashboard/recomendaciones",
     },
+
     { label: "Ranking", icon: faTrophy, to: "/dashboard/ranking" },
+    ...(user?.rol === "ADMIN"
+      ? [
+          { label: "Roles", icon: faUserCog, to: "/dashboard/roles" },
+          { label: "Usuarios", icon: faUsers, to: "/dashboard/usuarios" },
+          { label: "Eventos", icon: faCalendarAlt, to: "/dashboard/eventos" },
+        ]
+      : []),
+
     { label: "Perfil", icon: faUser, to: "/dashboard/perfil" },
     { label: "Inicio", icon: faHome, to: "/" },
     { label: "Cerrar sesión", icon: faSignOutAlt, action: handleLogout },
@@ -56,8 +69,8 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`bg-white border-r border-teal-200 h-screen p-4 flex flex-col transition-all duration-300 ${
-        collapsed ? "w-15" : "w-50"
+      className={`fixed top-0 left-0 h-full bg-white border-r border-teal-200 p-4 flex flex-col transition-all duration-300 z-50 ${
+        collapsed ? "w-16" : "w-48"
       }`}
     >
       <button
@@ -72,7 +85,10 @@ const Sidebar = () => {
           item.action ? (
             <button
               key={idx}
-              onClick={item.action}
+              onClick={() => {
+                item.action?.();
+                handleItemClick();
+              }}
               className="flex items-center w-full p-2 text-green-800 hover:bg-teal-100 rounded-lg transition-all"
             >
               <FontAwesomeIcon icon={item.icon} className="mr-3" />
@@ -82,6 +98,7 @@ const Sidebar = () => {
             <Link
               key={idx}
               to={item.to}
+              onClick={handleItemClick}
               className="flex items-center p-2 text-green-800 hover:bg-teal-100 rounded-lg transition-all"
             >
               <FontAwesomeIcon icon={item.icon} className="mr-3" />
