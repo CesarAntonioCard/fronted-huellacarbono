@@ -146,7 +146,9 @@ const PDFReport: React.FC<PDFReportProps> = ({
                 >
                   <Text style={styles.cell}>{app.app}</Text>
                   <Text style={styles.cellNumeric}>
-                    {app.total_hca.toFixed(4)}
+                    {Number.isFinite(app.total_hca)
+                      ? app.total_hca.toFixed(4)
+                      : "0.0000"}
                   </Text>
                   <Text style={styles.cellNumeric}>
                     {app.total_duracion_segundos ?? "-"}{" "}
@@ -181,7 +183,9 @@ const PDFReport: React.FC<PDFReportProps> = ({
                 >
                   <Text style={styles.cell}>{cat.category}</Text>
                   <Text style={styles.cellNumeric}>
-                    {cat.total_hca.toFixed(4)}
+                    {Number.isFinite(cat.total_hca)
+                      ? cat.total_hca.toFixed(4)
+                      : "0.0000"}
                   </Text>
                   <Text style={styles.cellNumeric}>
                     {cat.total_duracion_segundos ?? "-"}
