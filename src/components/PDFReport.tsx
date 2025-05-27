@@ -84,13 +84,9 @@ const styles = StyleSheet.create({
 
 interface PDFReportProps {
   dataHoy: UserEnergyData | AppUsageTodayResponse;
-  calcularPorcentaje: (valor: number) => number;
 }
 
-const PDFReport: React.FC<PDFReportProps> = ({
-  dataHoy,
-  calcularPorcentaje,
-}) => {
+const PDFReport: React.FC<PDFReportProps> = ({ dataHoy }) => {
   const {
     resumen,
     por_aplicacion: eventosPorAplicacion,
@@ -98,8 +94,22 @@ const PDFReport: React.FC<PDFReportProps> = ({
     registros,
   } = dataHoy;
 
+  if (
+    !resumen ||
+    !Array.isArray(eventosPorAplicacion) ||
+    !Array.isArray(eventosPorCategoria)
+  ) {
+    return null;
+  }
+
   const totalMwh = resumen.total_energy_mwh;
   const totalCO2 = resumen.total_hca;
+
+  const calcularPorcentaje = (valor: number) =>
+    (valor / (resumen.total_energy_mwh || 1)) * 100;
+
+  const topAplicaciones = eventosPorAplicacion.slice(0, 5);
+  const topCategorias = eventosPorCategoria.slice(0, 5);
 
   return (
     <Document>
@@ -137,12 +147,11 @@ const PDFReport: React.FC<PDFReportProps> = ({
               .map((app: AppEnergySummary, idx: number) => (
                 <View
                   key={app.app}
-                  style={[
-                    styles.tableRow,
-                    ...(idx === eventosPorAplicacion.slice(0, 5).length - 1
-                      ? [styles.tableRowLast]
-                      : []),
-                  ]}
+                  style={
+                    idx === topAplicaciones.length - 1
+                      ? [styles.tableRow, styles.tableRowLast]
+                      : styles.tableRow
+                  }
                 >
                   <Text style={styles.cell}>{app.app}</Text>
                   <Text style={styles.cellNumeric}>
@@ -174,12 +183,11 @@ const PDFReport: React.FC<PDFReportProps> = ({
               .map((cat: CategoryEnergySummary, idx: number) => (
                 <View
                   key={cat.category}
-                  style={[
-                    styles.tableRow,
-                    ...(idx === eventosPorCategoria.slice(0, 5).length - 1
-                      ? [styles.tableRowLast]
-                      : []),
-                  ]}
+                  style={
+                    idx === topCategorias.length - 1
+                      ? [styles.tableRow, styles.tableRowLast]
+                      : styles.tableRow
+                  }
                 >
                   <Text style={styles.cell}>{cat.category}</Text>
                   <Text style={styles.cellNumeric}>

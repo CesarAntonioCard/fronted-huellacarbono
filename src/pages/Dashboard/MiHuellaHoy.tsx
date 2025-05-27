@@ -137,12 +137,7 @@ export const MiHuellaHoy = () => {
         </button>
       ) : (
         <PDFDownloadLink
-          document={
-            <PDFReport
-              dataHoy={dataHoy}
-              calcularPorcentaje={calcularPorcentaje}
-            />
-          }
+          document={<PDFReport dataHoy={dataHoy} />}
           fileName="huella_carbono.pdf"
         >
           {({ loading }) => (
@@ -210,7 +205,7 @@ export const MiHuellaHoy = () => {
                       const date = new Date(str);
                       return isNaN(date.getTime())
                         ? ""
-                        : date.toLocaleTimeString("es-ES", {
+                        : date.toLocaleTimeString("es-PE", {
                             hour: "2-digit",
                             minute: "2-digit",
                             timeZone: "America/Lima",

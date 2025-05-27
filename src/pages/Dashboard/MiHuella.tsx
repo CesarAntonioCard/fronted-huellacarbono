@@ -216,12 +216,7 @@ export const MiHuella = () => {
         </button>
       ) : (
         <PDFDownloadLink
-          document={
-            <PDFReport
-              dataHoy={dataFiltros}
-              calcularPorcentaje={calcularPorcentaje}
-            />
-          }
+          document={<PDFReport dataHoy={dataFiltros} />}
           fileName="huella_carbono.pdf"
         >
           {({ loading }) => (

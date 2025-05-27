@@ -151,12 +151,7 @@ export const Graficos = () => {
           </button>
         ) : (
           <PDFDownloadLink
-            document={
-              <PDFReport
-                dataHoy={selectedUser}
-                calcularPorcentaje={calcularPorcentaje}
-              />
-            }
+            document={<PDFReport dataHoy={selectedUser} />}
             fileName="huella_carbono.pdf"
           >
             {({ loading }) => (
