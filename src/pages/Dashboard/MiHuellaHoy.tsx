@@ -18,9 +18,6 @@ import {
   Cell,
 } from "recharts";
 
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import PDFReport from "@/components/PDFReport";
-
 import { useWebSocket } from "@/context/WebSocketContext";
 
 export const MiHuellaHoy = () => {
@@ -48,7 +45,6 @@ export const MiHuellaHoy = () => {
     por_categoria: [],
   });
 
-  const [loadingDatos, setLoadingDatos] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -60,7 +56,6 @@ export const MiHuellaHoy = () => {
   useEffect(() => {
     const fetchEventosHoy = async () => {
       if (!user?.id) return;
-      setLoadingDatos(true);
       setError(null);
 
       try {
@@ -83,8 +78,6 @@ export const MiHuellaHoy = () => {
         };
         setDataHoy(emptyData);
         dataHoyRef.current = emptyData;
-      } finally {
-        setLoadingDatos(false);
       }
     };
 
@@ -131,22 +124,6 @@ export const MiHuellaHoy = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Mi Huella de Carbono</h1>
 
-      {loadingDatos || dataHoy.registros.length === 0 ? (
-        <button className="bg-gray-400 text-white px-4 py-2 rounded-xl cursor-not-allowed">
-          Exportar a PDF (esperando datos)
-        </button>
-      ) : (
-        <PDFDownloadLink
-          document={<PDFReport dataHoy={dataHoy} />}
-          fileName="huella_carbono.pdf"
-        >
-          {({ loading }) => (
-            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">
-              {loading ? "Generando PDF..." : "Exportar a PDF"}
-            </button>
-          )}
-        </PDFDownloadLink>
-      )}
       {dataHoy.registros.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">
           No hay datos registrados 📭
