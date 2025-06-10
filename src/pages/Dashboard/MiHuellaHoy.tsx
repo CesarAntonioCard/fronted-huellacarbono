@@ -91,7 +91,7 @@ export const MiHuellaHoy = () => {
         dataHoyRef.current = newData;
       },
     });
-  }, [user, apiUrl, registerHandlers]);
+  }, [user?.id, apiUrl, registerHandlers]);
 
   useEffect(() => {
     function updateInterval() {
