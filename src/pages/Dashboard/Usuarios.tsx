@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -16,7 +15,6 @@ import {
   DialogHeader,
   DialogFooter,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 import { User, deleteUser, restoreUser, getUsers } from "../../api/userApi";
@@ -46,7 +44,7 @@ export const Usuarios = () => {
           limit,
           nameFilter,
           estadoFilter,
-          emailFilter
+          emailFilter,
         );
         setUsers(usersData.users);
         setTotalPages(usersData.totalPages);
@@ -55,7 +53,7 @@ export const Usuarios = () => {
         console.error("Error al obtener usuarios:", error);
       }
     },
-    [currentPage, limit, nameFilter, estadoFilter, emailFilter]
+    [currentPage, limit, nameFilter, estadoFilter, emailFilter],
   );
 
   useEffect(() => {
@@ -67,7 +65,7 @@ export const Usuarios = () => {
       try {
         const updated = await deleteUser(deleteUserId);
         setUsers((prev) =>
-          prev.map((r) => (r.id === updated.id ? updated : r))
+          prev.map((r) => (r.id === updated.id ? updated : r)),
         );
         setDeleteUserId(null);
       } catch (error) {
@@ -81,7 +79,7 @@ export const Usuarios = () => {
       try {
         const restored = await restoreUser(restoreUserId);
         setUsers((prev) =>
-          prev.map((r) => (r.id === restored.id ? restored : r))
+          prev.map((r) => (r.id === restored.id ? restored : r)),
         );
         setRestoreUserId(null);
       } catch (error) {
